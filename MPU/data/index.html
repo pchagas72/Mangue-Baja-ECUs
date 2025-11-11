@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 - Atualização OTA</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .upload-container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        #upload_form {
+            margin-bottom: 1.5rem;
+        }
+        input[type="file"] {
+            margin-bottom: 1rem;
+        }
+        input[type="submit"] {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #28a745;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <h2>Atualização de Firmware OTA</h2>
+        <form method='POST' action='/update' enctype='multipart/form-data' id='upload_form'>
+            <input type='file' name='update' required>
+            <input type='submit' value='Update'>
+        </form>
+        <!-- A DIV da barra de progresso foi removida -->
+    </div>
+
+    <script>
+        // Interceta o envio do formulário com jQuery
+        $('form').submit(function(e) {
+            e.preventDefault(); // Impede a ação padrão de envio do formulário
+            var form = $('#upload_form')[0];
+            var data = new FormData(form);
+            
+            // Oculta o formulário e mostra uma mensagem de que o upload começou
+            $('.upload-container').html('<h2>A carregar...</h2><p>O upload começou. O ESP32 irá reiniciar automaticamente quando terminar. Por favor, aguarde.</p>');
+
+            $.ajax({
+                url: '/update',
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                // A função xhr para monitorizar o progresso foi removida
+                success: function(d, s) {
+                    console.log('Sucesso!');
+                    // A mensagem de sucesso já está no ecrã. A placa irá reiniciar.
+                },
+                error: function(a, b, c) {
+                    console.log('Erro no upload.');
+                    // Mostra uma mensagem de erro
+                    $('.upload-container').html('<h2>Erro no Upload!</h2><p>Ocorreu um erro. Por favor, tente reiniciar o ESP32 e tente novamente.</p>');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
