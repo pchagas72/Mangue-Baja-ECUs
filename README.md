@@ -4,6 +4,14 @@ For some reason, previous team members standardized English as the main document
 
 This firmware is outdated and will be revamped as soon as the current hardware issues are resolved.
 
+## How to use the OTA library
+
+After turning the esp32 chip on, you can connect to the "<BOARD_NAME> Mangue_Baja" network, and then the OTA interface will be found at 192.168.34.1:1880
+
+After using a browser to access it, you'll be able to send the compiled binary to the board
+
+Always remember to keep the OTA.h implementation on the new firmware so it's always accessible.
+
 ## MPU
 
 The Mapping and Positioning Unit (MPU), responsible for GPS location and LoRa 
