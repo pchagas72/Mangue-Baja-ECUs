@@ -27,6 +27,12 @@ an MQTT connection to the database, and the OTA protocol for firmware updates.
 The folder name is self-explanatory. It contains all the compiled binaries for 
 easier access when sending via OTA.
 
+## About the datalogging
+
+This is the first code in this repo writen 100% by be, it is ultra simple and I'll be adding more sensors to it later.
+
 ## TODO's
 
 - [ ] Write documentation for each ECU.
+- [ ] Add real timestamp to datalogging.
+- [ ] Send datalogging data through mqtt.
