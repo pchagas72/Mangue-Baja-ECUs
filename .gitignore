@@ -3,3 +3,4 @@ sdkconfig.*
 build
 managed_components
 dependencies.lock
+.cache
