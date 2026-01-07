@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include <StateMachine.h>
 #include <CAN.h>
+#include <ota.h>
 
 /* Task Management */
 TaskHandle_t StateMachine_Task = NULL;
@@ -39,6 +40,12 @@ void setup()
   if (!CAN_start_device()) {
     esp_restart();
   }
+  if(!SPIFFS.begin(true)){
+      Serial.println("An Error has occurred while mounting SPIFFS");
+      return;
+  }
+  setupnetwork();
+  setupServerRoutes();
 
   // Initialize the LoRa module and store the result in the status flag.
   status = LORA_init();
@@ -64,7 +71,7 @@ void setup()
  * * This function is empty because the application's logic is handled by FreeRTOS tasks.
  */
 void loop() {
-  // The loop is empty as all functionality is handled by the created tasks.
+    handleServerClient();
 }
 
 /**

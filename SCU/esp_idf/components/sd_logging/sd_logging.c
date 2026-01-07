@@ -55,7 +55,8 @@ void initialize_sd(const char *TAG){
 }
 
 // Write file to SD
-int write_DHT11_to_sd(const char *TAG, float temp, float hum) {
+// Add packet as parameter
+int write_packet_to_sd(const char *TAG) {
     ESP_LOGI(TAG, "Opening file to write...");
     
     // Open file in append mode ('a')
@@ -67,7 +68,7 @@ int write_DHT11_to_sd(const char *TAG, float temp, float hum) {
     
     // Write data (CSV format: Timestamp, Temp, Hum)
     // TODO: ADD RTC
-    fprintf(f, "%lu, %.1f, %.1f\n", (unsigned long)esp_log_timestamp(), temp, hum);
+    // fprintf(f, "DATA PACKET");
     
     fclose(f);
     ESP_LOGI(TAG, "Data written successfully");

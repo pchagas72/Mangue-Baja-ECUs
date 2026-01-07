@@ -7,4 +7,4 @@
 #define PIN_NUM_CS   5
 
 void initialize_sd(const char *TAG);
-int write_DHT11_to_sd(const char *TAG, float temp, float hum);
+int write_packet_to_sd(const char *TAG);

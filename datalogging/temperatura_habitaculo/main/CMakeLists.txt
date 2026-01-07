@@ -1,3 +1,3 @@
 idf_component_register(SRCS "temperatura_habitaculo.c"
                     INCLUDE_DIRS "."
-                    REQUIRES sd_logging sensors led_controls)
+                    REQUIRES sd_logging sensors led_controls bmi160 esp_timer)
