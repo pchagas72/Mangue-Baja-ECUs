@@ -53,7 +53,7 @@ typedef struct
     // Real Time Clock timestamp
     uint32_t timestamp;
 
-} mqtt_packet_t;
+} can_packet;
 
 /* IDs */
 #define BUFFER_SIZE     50
@@ -85,4 +85,5 @@ typedef struct
 #define MPU_ID          0x309
 
 void initialize_CAN(const char *TAG);
-int read_packet(const char *TAG, mqtt_packet_t *out_packet);
+int read_packet(const char *TAG, can_packet *out_packet);
+void get_fixed_packet(can_packet *out_packet);

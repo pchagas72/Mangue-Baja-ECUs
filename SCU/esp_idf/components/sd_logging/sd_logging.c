@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <esp_log.h>
 #include "esp_vfs_fat.h"
+#include "can_management.h"
 
 void initialize_sd(const char *TAG){
     esp_err_t ret;
@@ -54,23 +55,31 @@ void initialize_sd(const char *TAG){
  
 }
 
-// Write file to SD
-// Add packet as parameter
-int write_packet_to_sd(const char *TAG) {
+// Altere a assinatura para receber o pacote
+int write_packet_to_sd(const char *TAG, can_packet *pkt) {
     ESP_LOGI(TAG, "Opening file to write...");
     
-    // Open file in append mode ('a')
-    FILE *f = fopen(MOUNT_POINT"/log.txt", "a");
+    FILE *f = fopen(MOUNT_POINT"/log.csv", "a");
     if (f == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
         return 1;
     }
     
-    // Write data (CSV format: Timestamp, Temp, Hum)
-    // TODO: ADD RTC
-    // fprintf(f, "DATA PACKET");
+    // Formata a string CSV
+    // Ordem: Timestamp, RPM, Speed, Temp, Volts, SOC, ACC_X, ACC_Y, ACC_Z
+    fprintf(f, "%lu,%u,%u,%u,%.2f,%u,%d,%d,%d\n",
+            pkt->timestamp,
+            pkt->rpm,
+            pkt->speed,
+            pkt->temperature,
+            pkt->volt,
+            pkt->SOC,
+            pkt->imu_acc.acc_x,
+            pkt->imu_acc.acc_y,
+            pkt->imu_acc.acc_z
+            );
     
     fclose(f);
-    ESP_LOGI(TAG, "Data written successfully");
+    ESP_LOGI(TAG, "Packet written to SD");
     return 0;
 }

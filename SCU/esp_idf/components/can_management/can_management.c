@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string.h>
+#include "esp_timer.h"
 
 void initialize_CAN(const char *TAG) {
     ESP_LOGI(TAG, "Initializing CAN (TWAI)...");
@@ -35,7 +36,7 @@ void initialize_CAN(const char *TAG) {
     }
 }
 
-int read_packet(const char *TAG, mqtt_packet_t *out_packet) {
+int read_packet(const char *TAG, can_packet *out_packet) {
     twai_message_t message;
 
     // Wait for message
@@ -145,4 +146,31 @@ int read_packet(const char *TAG, mqtt_packet_t *out_packet) {
         ESP_LOGE(TAG, "Failed to receive message: %s", esp_err_to_name(ret));
         return -1; // Error
     }
+}
+
+void get_fixed_packet(can_packet *out_packet) {
+    // 1. Limpa a estrutura
+    memset(out_packet, 0, sizeof(can_packet));
+
+    // 2. Preenche com valores conhecidos (Mock Data)
+    out_packet->rpm = 3000;
+    out_packet->speed = 60;
+    out_packet->temperature = 90;
+    out_packet->SOC = 80;
+    out_packet->volt = 12.5f;
+    out_packet->current = 15.2f;
+    out_packet->cvt = 1;
+    out_packet->flags = 0x01; // Ex: Flag RUN
+
+    // Simulação de Acelerômetro
+    out_packet->imu_acc.acc_x = 100;
+    out_packet->imu_acc.acc_y = -200;
+    out_packet->imu_acc.acc_z = 980;
+
+    // GPS (Ex: Pista do Baja)
+    out_packet->latitude = -23.5505;
+    out_packet->longitude = -46.6333;
+
+    // Timestamp (convertendo microssegundos para milissegundos)
+    out_packet->timestamp = (uint32_t)(esp_timer_get_time() / 1000);
 }
