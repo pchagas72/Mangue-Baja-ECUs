@@ -5,6 +5,7 @@
 #include "sd_logging.h"
 #include "sensors.h"
 #include <pthread.h>
+#include <esp_log.h>
 
 static const char *TAG = "LOGGER";
 pthread_mutex_t led_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -16,6 +17,7 @@ pthread_mutex_t led_mutex = PTHREAD_MUTEX_INITIALIZER;
 void app_main(void) {
    
     initialize_sd(TAG);
+
     int res;
 
     while (1) {

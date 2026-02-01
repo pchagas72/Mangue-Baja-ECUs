@@ -55,7 +55,7 @@ idf.py -p (PORT) flash monitor
 * `/SCU` - Source code for SD logging and GSM/MQTT.
 * `/Steering Wheel` - Source code for the driver display interface.
 * `/Compiled` - Pre-compiled binaries for quick OTA deployment.
-* `/Datalogging` - Firmware for tests that require sensors not present in the main harness
+* `/Extra-Tools` - Firmware for tests that require sensors not present in the main harness. And a few useful tools like a CAN Simulator or I2C Scanner.
 
 ---
 **Mangue Baja** | *Pernambuco, Brazil*

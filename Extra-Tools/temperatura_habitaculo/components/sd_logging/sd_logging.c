@@ -19,9 +19,9 @@ void initialize_sd(const char *TAG){
     const char mount_point[] = MOUNT_POINT;
 
     spi_bus_config_t bus_cfg = {
-        .mosi_io_num = PIN_NUM_MOSI,
-        .miso_io_num = PIN_NUM_MISO,
-        .sclk_io_num = PIN_NUM_CLK,
+        .mosi_io_num = 13,
+        .miso_io_num = 26,
+        .sclk_io_num = 14,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
@@ -37,7 +37,7 @@ void initialize_sd(const char *TAG){
     host.slot = SPI2_HOST;
 
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    slot_config.gpio_cs = PIN_NUM_CS;
+    slot_config.gpio_cs = 15;
     slot_config.host_id = SPI2_HOST;
 
     // Mount the filesystem

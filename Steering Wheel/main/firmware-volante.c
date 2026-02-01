@@ -7,6 +7,7 @@
 #include "esp_timer.h"
 #include "ssd1309_interface.h"
 #include "can_management.h"
+#include "sd_logging.h"
 //#include "icons.h"
 
 // Hardware configurations
@@ -276,6 +277,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ssd1309_hw_init(&bus_handle, &screen_handle));
     ssd1309_init(screen_handle);
     can_init(); // Pin 5 (TX) - Pin 18 (RX)
+    sd_logging_init();
 
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
     gpio_set_pull_mode(PIN_BUTTON, GPIO_PULLUP_ONLY);
@@ -353,6 +355,7 @@ void app_main(void)
             }
         }
 
+        sd_log_data(&car, now);
         ssd1309_display_buffer(screen_handle, s_buffer);
         vTaskDelay(pdMS_TO_TICKS(30)); // 100 FPS target (system permitting)
     }
