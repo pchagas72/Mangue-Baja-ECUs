@@ -1,38 +1,60 @@
-# ECUs Modified for the 2026 Nationals
+# Mangue Baja - ECU Firmware (2026 Season)
 
-For some reason, previous team members standardized English as the main documentation language, so we will continue that for now.
+This repository contains the embedded firmware for the Electronic Control Units (ECUs) of the Mangue Baja off-road vehicle. The system is built on the **ESP32** architecture, currently undergoing a refactoring process from the Arduino framework to **native ESP-IDF** to ensure deterministic behavior, real-time performance, and automotive-grade reliability.
 
-This firmware is outdated and will be revamped as soon as the current hardware issues are resolved.
+## System Architecture
 
-## How to use the OTA library
+The ESP based vehicle electronics are distributed across three primary modules connected via **CAN Bus**:
 
-After turning the esp32 chip on, you can connect to the "<BOARD_NAME> Mangue_Baja" network, and then the OTA interface will be found at 192.168.34.1:1880
+### 1. Mapping and Positioning Unit (MPU)
+Responsible for vehicle localization and long-range telemetry.
+* **Functions:** GPS data acquisition and LoRa communication.
+* **Development Status:** Refactoring to ESP-IDF.
+    * **CAN:** Migrating to the native **TWAI (Two-Wire Automotive Interface)** driver for precise timing and error handling.
+    * **LoRa:** Implementing a custom UART driver with **DMA (Direct Memory Access)** to replace blocking calls, ensuring the main control loop remains non-blocking during data transmission.
 
-After using a browser to access it, you'll be able to send the compiled binary to the board.
+### 2. Storage Control Unit (SCU)
+The central data acquisition and cloud telemetry node.
+* **Functions:** Local data logging (SD Card) and MQTT telemetry via GSM.
+* **Development Status:** Refactoring to ESP-IDF.
+    * **Storage:** Implementing **Virtual File System (VFS)** with SPI for robust file operations.
+    * **Connectivity:** Replacing generic libraries with native `esp_mqtt` and `esp_modem` components for efficient cellular communication.
 
-Always remember to keep the OTA.h implementation on the new firmware so it's always accessible.
+### 3. Steering Wheel Interface
+The primary Human-Machine Interface (HMI) for the driver.
+* **Functions:** Visualizing critical ECU data (Fuel, Voltage, Engine Temp, Roll/Pitch) via an OLED display.
+* **Framework:** Built entirely on **ESP-IDF**.
 
-## MPU
+## Key Features
 
-The Mapping and Positioning Unit (MPU), responsible for GPS location and LoRa 
-communications, now implements the OTA protocol for wireless firmware updates.
+* **OTA Updates:** Supports Over-The-Air firmware updates via WiFi.
+    * *Default Access Point:* `<BOARD_NAME> Mangue_Baja`
+    * *Update Gateway:* `192.168.34.1:1880`
+* **Automotive Protocol:** Utilizes standard CAN bus communication (0x500 series IDs) for inter-module data exchange.
+* **Data Logging:** Local persistency on SD cards for post-run engineering analysis.
 
-## SCU
+## Development Environment
 
-The Storage Control Unit (SCU), now fixed, implements SD storage of CAN data, 
-an MQTT connection to the database, and the OTA protocol for firmware updates.
+The project utilizes the **Espressif IoT Development Framework (ESP-IDF)**.
 
-## /'Compiled Binaries'
+**Build & Flash:**
+```bash
+# Setup environment (if not already done)
+. $HOME/esp/esp-idf/export.sh
 
-The folder name is self-explanatory. It contains all the compiled binaries for 
-easier access when sending via OTA.
+# Build the project
+idf.py build
 
-## About the datalogging
+# Flash and Monitor
+idf.py -p (PORT) flash monitor
+```
 
-This is the first code in this repo writen 100% by be, it is ultra simple and I'll be adding more sensors to it later.
+## Repository Structure
 
-## TODO's
+* `/MPU` - Source code for GPS and LoRa telemetry.
+* `/SCU` - Source code for SD logging and GSM/MQTT.
+* `/Steering Wheel` - Source code for the driver display interface.
+* `/Compiled Binaries` - Pre-compiled binaries for quick OTA deployment.
 
-- [ ] Write documentation for each ECU.
-- [ ] Add real timestamp to datalogging.
-- [ ] Send datalogging data through mqtt.
+---
+**Mangue Baja** | *Pernambuco, Brazil*
