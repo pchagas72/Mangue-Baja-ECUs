@@ -54,7 +54,8 @@ idf.py -p (PORT) flash monitor
 * `/MPU` - Source code for GPS and LoRa telemetry.
 * `/SCU` - Source code for SD logging and GSM/MQTT.
 * `/Steering Wheel` - Source code for the driver display interface.
-* `/Compiled Binaries` - Pre-compiled binaries for quick OTA deployment.
+* `/Compiled` - Pre-compiled binaries for quick OTA deployment.
+* `/Datalogging` - Firmware for tests that require sensors not present in the main harness
 
 ---
 **Mangue Baja** | *Pernambuco, Brazil*
