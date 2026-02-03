@@ -1,0 +1,47 @@
+menu "Storage Control Unit Configuration"
+
+    config SERVER_NAME
+        string "MQTT topic"
+        default ""
+        help
+            Topic to send packages
+
+    config MQTT_IP
+        string "MQTT Broker IP Address"
+        default ""
+        help
+            The IP address or hostname of your MQTT broker.
+
+    config MQTT_PORT
+        int "MQTT Broker Port"
+        default 8883
+        range 0 65535
+        help
+            The port number for the MQTT broker (default 1883 for TCP, 8883 for SSL).
+
+    config MQTT_USER
+        string "MQTT Username"
+        default ""
+        help
+            Username for MQTT authentication. Leave empty if not used.
+
+    config MQTT_PASSWORD
+        string "MQTT Password"
+        default ""
+        help
+            Password for MQTT authentication. Leave empty if not used.
+
+    config MQTT_QOS
+        int "MQTT Quality of Service"
+        default 1
+        range 0 2
+        help
+            The guarantee level of message delivery between clients and a broker.
+
+    config MQTT_URL_SCHEME
+        string "MQTT URL Scheme"
+        default "mqtts"
+        help
+            mqtt for non-secure, mqtts for secure
+
+endmenu
