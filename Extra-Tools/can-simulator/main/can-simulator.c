@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +46,7 @@ void app_main(void)
     }
 
     float time_counter = 0;
+    uint16_t rpm = 700;
 
     while(1) {
         // --- BUS RECOVERY LOGIC ---
@@ -60,7 +62,14 @@ void app_main(void)
         }
 
         // 2. Prepare Data
-        uint16_t rpm = (uint16_t)(3800 * fabs(sin(time_counter * 0.3)));
+        //rpm = (uint16_t)(3800 * fabs(sin(time_counter * 0.3)));
+        if (gpio_get_level(GPIO_NUM_0) == 0 && rpm <= 3800) {
+            rpm += (100 - rpm/100);
+        } else if (rpm >= 700 && gpio_get_level(GPIO_NUM_0) != 0){
+            rpm -= 100 + rpm/50;
+        }
+
+
         uint16_t speed = rpm / 70; 
         int16_t roll = (int16_t)(200 * sin(time_counter * 0.8)); 
         int16_t pitch = (int16_t)(100 * cos(time_counter * 0.5)); 
