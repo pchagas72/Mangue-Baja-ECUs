@@ -1,6 +1,6 @@
 # Mangue Baja - ECU Firmware (2026 Season)
 
-This repository contains the embedded firmware for the Electronic Control Units (ECUs) of the Mangue Baja off-road vehicle. The system is built on the **ESP32** architecture, currently undergoing a refactoring process from the Arduino framework to **native ESP-IDF** to ensure deterministic behavior, real-time performance, and automotive-grade reliability.
+This repository contains the embedded firmware for the Electronic Control Units (ECUs) of the Mangue Baja off-road vehicle. The system is built on the **ESP32** and **STM32** architectures, currently undergoing a refactoring process from the Arduino framework to **native ESP-IDF and STM32CubeIDE** to ensure deterministic behavior, real-time performance, and automotive-grade reliability.
 
 ## System Architecture
 
