@@ -1,13 +1,16 @@
 #include "can_management.h"
 #include "driver/twai.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h" // Required for vTaskDelay
+#include "freertos/task.h"     // Required for vTaskDelay
 #include <string.h>
 
-#define CAN_TX_PIN GPIO_NUM_5
-#define CAN_RX_PIN GPIO_NUM_18
+#define CAN_TX_PIN GPIO_NUM_22
+#define CAN_RX_PIN GPIO_NUM_21
 #define TAG "CAN_RX"
 
 void can_init(void) {
+    // FIX: Changed from TWAI_MODE_NO_ACK to TWAI_MODE_NORMAL
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN, CAN_RX_PIN, TWAI_MODE_NORMAL);
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
@@ -28,6 +31,8 @@ void can_recover_if_needed(void) {
         if (status.state == TWAI_STATE_BUS_OFF) {
             ESP_LOGE(TAG, "Bus Off detected! Recovering...");
             twai_initiate_recovery();
+            // FIX: Wait for bus to stabilize (128 occurrences of 11 recessive bits)
+            vTaskDelay(pdMS_TO_TICKS(100)); 
         }
         if (status.state == TWAI_STATE_STOPPED) {
              ESP_LOGI(TAG, "Restarting Driver...");

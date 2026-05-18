@@ -4,10 +4,10 @@
 #include "can_management.h"
 
 // --- PIN CONFIGURATION (HSPI) ---
-#define SD_CS    GPIO_NUM_15
-#define SD_MOSI  GPIO_NUM_13
-#define SD_CLK   GPIO_NUM_14
-#define SD_MISO  GPIO_NUM_26
+#define SD_CS    GPIO_NUM_5
+#define SD_MOSI  GPIO_NUM_23
+#define SD_CLK   GPIO_NUM_18
+#define SD_MISO  GPIO_NUM_19
 
 #define MOUNT_POINT "/sdcard"
 

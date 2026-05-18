@@ -1,11 +1,10 @@
 #include <stdio.h>
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-
 #include <esp_log.h>
 #include <string.h>
 #include <esp_timer.h>
+#include "driver/gpio.h" // Added for direct LED control
 
 #include "can_management.h"
 #include "esp_err.h"
@@ -25,12 +24,12 @@
 #define TAG "SCU_MAIN"
 #define TIMEOUT_MS 1500
 
-Server_State state;
+// Use the struct properly
+Server_State state = {0}; 
 pthread_mutex_t led_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char mqtt_response_topic[64];
 char mqtt_broker_address[128];
-bool mqtt_connected = false;
 
 typedef struct __attribute__((packed)) {
     float voltage;          // f (raw[0])
@@ -40,12 +39,9 @@ typedef struct __attribute__((packed)) {
     uint8_t eng_temp;       // B (raw[4])
     uint16_t speed;         // H (raw[5])
     
-    // Accel (raw shorts)
     int16_t acc_x;          // h (raw[6])
     int16_t acc_y;          // h (raw[7])
     int16_t acc_z;          // h (raw[8])
-    
-    // Gyro (raw shorts)
     int16_t dps_x;          // h (raw[9])
     int16_t dps_y;          // h (raw[10])
     int16_t dps_z;          // h (raw[11])
@@ -66,63 +62,59 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTT Connected to HiveMQ Cloud");
-            mqtt_connected = true;
-            // Subscribe to the command topic
-            //esp_mqtt_client_subscribe(event->client, mqtt_receive_topic, 1);
+            state.connected_to_mqtt = true; // Use state variable here
             break;
         case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGW(TAG, "MQTT Disconnected");
-        mqtt_connected = false;
-        break;
-    case MQTT_EVENT_ERROR:
-        ESP_LOGE(TAG, "MQTT Error type: 0x%x", event->error_handle->error_type);
-        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
-            ESP_LOGE(TAG, "Last TLS error: 0x%x", event->error_handle->esp_tls_last_esp_err);
-            ESP_LOGE(TAG, "TLS stack error: 0x%x", event->error_handle->esp_tls_stack_err);
-        }
-        break;
-    default:
-        break;
+            ESP_LOGW(TAG, "MQTT Disconnected");
+            state.connected_to_mqtt = false; // Use state variable here
+            break;
+        case MQTT_EVENT_ERROR:
+            ESP_LOGE(TAG, "MQTT Error type: 0x%x", event->error_handle->error_type);
+            break;
+        default:
+            break;
     }
 }
 
 void app_main(void)
 {
-    char *taskName = pcTaskGetName(NULL);
-    ESP_LOGI(taskName, "Task starting up\n");
+    ESP_LOGI(TAG, "Task starting up\n");
 
-    // Read topics and server IP from the config
     snprintf(mqtt_response_topic, sizeof(mqtt_response_topic), "%s", CONFIG_SERVER_NAME);
     snprintf(mqtt_broker_address, sizeof(mqtt_broker_address), "%s://%s:%d",
             CONFIG_MQTT_URL_SCHEME,
             CONFIG_MQTT_IP,
             CONFIG_MQTT_PORT);
 
-    // Start internet connection
+    // Initial setups
     server_connect_internet();
-
-    // Gather info about internet connection
     server_check_connection_internet(&state, &led_mutex);
 
     esp_mqtt_client_config_t mqtt_cfg = {
             .broker.address.uri = mqtt_broker_address,
             .broker.verification.crt_bundle_attach = esp_crt_bundle_attach,
-            .credentials.username = CONFIG_MQTT_USER,      // Add Username
-            .credentials.authentication.password = CONFIG_MQTT_PASSWORD, // Add Password
+            .credentials.username = CONFIG_MQTT_USER,      
+            .credentials.authentication.password = CONFIG_MQTT_PASSWORD, 
     };
+
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
+    
     blink_led(3, 500, &led_mutex);
 
-    // Start CAN network
     can_init();
-    sd_logging_init();
+    //sd_logging_init();
 
     car_state_t car = {0};
     telemetry_packet_t packet = {0};
+    
     int64_t last_pkt_time = 0;
+    int64_t led_off_timer = 0; // For non-blocking blinking
+    
+    // Ensure LED pin is ready
+    gpio_set_direction(BLINK_LED, GPIO_MODE_OUTPUT);
 
-    // Any side processes can be executed here
     while (1)
     {
         int64_t now_us = esp_timer_get_time();
@@ -132,51 +124,45 @@ void app_main(void)
             car.link_active = false;
         }
 
-        // 1. Update CAN Data
-        if (can_update_state(&car)) {
+        // Wait up to 50ms for a CAN packet (Eliminates the need for vTaskDelay!)
+        if (can_update_state(&car, pdMS_TO_TICKS(500))) {
             last_pkt_time = now_ms;
             car.link_active = true;
-            sd_log_data(&car, now_ms);
+            
+            // Trigger Non-Blocking Blink (20ms flash)
+            gpio_set_level(BLINK_LED, 1);
+            led_off_timer = now_ms + 20;
 
-            // 2. Prepare MQTT Packet
-            memset(&packet, 0, sizeof(telemetry_packet_t));
+            // Log to SD
+            //sd_log_data(&car, (uint32_t)now_ms);
 
-            packet.voltage = car.voltage;
-            packet.soc = car.fuel;  // Mapping fuel to SOC slot based on your data structure
-            packet.cvt_temp = car.cvt_temp;
-            packet.current = 0.0f; 
-            packet.eng_temp = car.eng_temp;
-            packet.speed = car.speed;
+            // Prepare and send MQTT Packet only if connected
+            if (state.connected_to_mqtt) {
+                memset(&packet, 0, sizeof(telemetry_packet_t));
 
-            // Accelerometer & Gyro (Zeros until you add the sensor driver)
-            packet.acc_x = 0; 
-            packet.acc_y = 0;
-            packet.acc_z = 0;
-            packet.dps_x = 0;
-            packet.dps_y = 0;
-            packet.dps_z = 0;
+                packet.voltage = car.voltage;
+                packet.soc = (uint8_t)car.fuel; // Cast applied
+                packet.cvt_temp = car.cvt_temp;
+                packet.current = 0.0f; 
+                packet.eng_temp = car.eng_temp;
+                packet.speed = car.speed;
 
-            packet.roll = car.roll;
-            packet.pitch = car.pitch;
-            packet.rpm = car.rpm;
-            packet.flags = (car.link_active ? 1 : 0) | (car.box_alert ? 2 : 0);
+                packet.roll = car.roll;
+                packet.pitch = car.pitch;
+                packet.rpm = car.rpm;
+                packet.flags = (car.link_active ? 1 : 0) | (car.box_alert ? 2 : 0);
+                packet.timestamp = (uint32_t)now_ms;
 
-            packet.latitude = 0.0;
-            packet.longitude = 0.0;
-            packet.timestamp = (uint32_t)now_ms;
-
-            if (client) {
                 esp_mqtt_client_publish(client, mqtt_response_topic, (const char*)&packet, sizeof(telemetry_packet_t), 0, 0);
-
             }
         }
 
-        /*
-        if (!state.connected_to_mqtt || !state.connected_to_internet) {
-            blink_led(5, 50, &led_mutex);
+        // Turn off LED if blink duration has passed
+        if (led_off_timer > 0 && now_ms > led_off_timer) {
+            gpio_set_level(BLINK_LED, 0);
+            led_off_timer = 0;
         }
-        */
-
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        
+        // REMOVED vTaskDelay(100) because can_update_state() now handles the blocking timeout gracefully!
     }
 }

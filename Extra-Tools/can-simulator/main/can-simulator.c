@@ -11,8 +11,8 @@
 #include "esp_log.h"
 
 // --- CONFIGURATION ---
-#define TX_PIN GPIO_NUM_5
-#define RX_PIN GPIO_NUM_4
+#define TX_PIN GPIO_NUM_22
+#define RX_PIN GPIO_NUM_21
 #define TAG "SIM_HEALER"
 
 // --- LEGACY IDs ---
@@ -62,13 +62,11 @@ void app_main(void)
         }
 
         // 2. Prepare Data
-        //rpm = (uint16_t)(3800 * fabs(sin(time_counter * 0.3)));
         if (gpio_get_level(GPIO_NUM_0) == 0 && rpm <= 3800) {
             rpm += (100 - rpm/100);
         } else if (rpm >= 700 && gpio_get_level(GPIO_NUM_0) != 0){
             rpm -= 100 + rpm/50;
         }
-
 
         uint16_t speed = rpm / 70; 
         int16_t roll = (int16_t)(200 * sin(time_counter * 0.8)); 
@@ -90,13 +88,13 @@ void app_main(void)
         msg.identifier = ID_RPM;
         msg.data_length_code = 2;
         memcpy(msg.data, &rpm, 2);
-        twai_transmit(&msg, 0);
+        twai_transmit(&msg, tx_timeout); // FIX: Applied timeout
 
         // Speed (0x300)
         msg.identifier = ID_SPEED;
         msg.data_length_code = 2;
         memcpy(msg.data, &speed, 2);
-        twai_transmit(&msg, 0);
+        twai_transmit(&msg, tx_timeout); // FIX: Applied timeout
 
         // Fuel (0x500)
         msg.identifier = ID_FUEL;
@@ -109,13 +107,13 @@ void app_main(void)
         msg.data_length_code = 4;
         memcpy(&msg.data[0], &roll, 2);
         memcpy(&msg.data[2], &pitch, 2);
-        twai_transmit(&msg, 0);
+        twai_transmit(&msg, tx_timeout); // FIX: Applied timeout
 
         // Volt (0x502)
         msg.identifier = ID_VOLTAGE;
         msg.data_length_code = 4;
         memcpy(msg.data, &volt, 4);
-        twai_transmit(&msg, 0);
+        twai_transmit(&msg, tx_timeout); // FIX: Applied timeout
 
         // CVT Temp (0x401)
         msg.identifier = ID_CVT_TEMP;
@@ -123,12 +121,13 @@ void app_main(void)
         memcpy(msg.data, &cvt_temp, 1);
         twai_transmit(&msg, tx_timeout);
 
-        // ENG Temp (0x400) - Fixed ID assignment and removed redundant call
+        // ENG Temp (0x400)
         msg.identifier = ID_ENG_TEMP;
         msg.data_length_code = 1;
         memcpy(msg.data, &eng_temp, 1);
-        twai_transmit(&msg, 0);
+        twai_transmit(&msg, tx_timeout); // FIX: Applied timeout
 
+        ESP_LOGI("CAN_SIM", "Sent package");
         time_counter += 0.1;
         vTaskDelay(pdMS_TO_TICKS(50)); 
     }

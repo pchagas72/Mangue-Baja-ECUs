@@ -10,6 +10,8 @@ static const char *TAG = "SD_LOG";
 static sdmmc_card_t *card;
 static char current_filename[32];
 static bool is_mounted = false;
+static FILE *active_log_file = NULL;
+static uint32_t last_sync_time = 0;
 
 esp_err_t sd_logging_init(void)
 {
@@ -89,34 +91,21 @@ esp_err_t sd_logging_init(void)
     return ESP_OK;
 }
 
+
 void sd_log_data(car_state_t *car, uint32_t timestamp_ms)
 {
     if (!is_mounted) return;
 
-    // Open in Append mode ("a")
-    FILE *f = fopen(current_filename, "a");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for appending");
-        return;
+    // Open it once and keep it open
+    if (active_log_file == NULL) {
+        active_log_file = fopen(current_filename, "a");
+        if (active_log_file == NULL) {
+            ESP_LOGE(TAG, "Failed to open file for appending");
+            return;
+        }
     }
-/*
-    // Write Data Line
-    // Format: Time, RPM, Speed, Fuel, Volt, CVT, ENG, Roll, pitc
-    ESP_LOGI(TAG, "%d,%d,%d,%d,%.2f,%d,%d,%d,%d\n",
-            timestamp_ms,
-            car->rpm,
-            car->speed,
-            car->fuel,
-            car->voltage,
-            car->cvt_temp,
-            car->eng_temp,
-            car->roll,
-            car->pitch
-           );
-           */
 
-
-    fprintf(f, "%ld,%d,%d,%d,%.2f,%d,%d,%d,%d\n",
+    fprintf(active_log_file, "%ld,%d,%d,%d,%.2f,%d,%d,%d,%d\n",
             timestamp_ms,
             car->rpm,
             car->speed,
@@ -128,12 +117,24 @@ void sd_log_data(car_state_t *car, uint32_t timestamp_ms)
             car->pitch
     );
 
-    // Close immediately to save data in case of power loss (Baja vibration!)
-    fclose(f);
+    // Sync physically to the SD card every 1 second. 
+    // If power dies, you only lose a maximum of 1 second of data, 
+    // but the task runs MUCH faster without opening/closing continuously.
+    if (timestamp_ms - last_sync_time > 1000) {
+        fflush(active_log_file);
+        fsync(fileno(active_log_file)); 
+        last_sync_time = timestamp_ms;
+    }
 }
 
 void sd_logging_deinit(void)
 {
+    // Close the file safely if it is currently open
+    if (active_log_file != NULL) {
+        fclose(active_log_file);
+        active_log_file = NULL;
+    }
+
     if (is_mounted) {
         esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
         ESP_LOGI(TAG, "Card unmounted");

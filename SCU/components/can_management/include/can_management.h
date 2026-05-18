@@ -35,4 +35,4 @@ typedef struct {
 void can_init(void);
 // Updates the state struct based on whatever messages are in the buffer
 // Returns true if ANY data was updated
-bool can_update_state(car_state_t *state);
+bool can_update_state(car_state_t *state, uint32_t timeout_ticks);
