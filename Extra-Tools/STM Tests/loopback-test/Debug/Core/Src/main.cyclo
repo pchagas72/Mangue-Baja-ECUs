@@ -1,0 +1,4 @@
+../Core/Src/main.c:50:5:main	2
+../Core/Src/main.c:121:6:SystemClock_Config	3
+../Core/Src/main.c:154:6:HAL_CAN_RxFifo1MsgPendingCallback	3
+../Core/Src/main.c:167:6:Error_Handler	2

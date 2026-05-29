@@ -1,2 +1,0 @@
-../Core/Src/lsm6ds3.c:3:9:LSM6DS3_Init	40	static
-../Core/Src/lsm6ds3.c:27:6:LSM6DS3_Read	48	static
