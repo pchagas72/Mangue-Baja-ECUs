@@ -3,6 +3,7 @@
 static uint32_t last_rpm_tick = 0;
 static uint32_t last_imu_tick = 0;
 static uint32_t last_debug_tick = 0;
+static uint32_t last_led_tick = 0;
 
 void StateMachine_Init(vmu_state_t *vmu_current_state){
     vmu_current_state->current_state = STATE_BOOT;
@@ -23,81 +24,80 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
 
     switch (vmu_current_state->current_state) {
 
-        case STATE_BOOT:
+    case STATE_BOOT:
 
-            /* Initializes communications with modules and CAN network */
-
-            // Init IMU
-            if (!vmu_current_state->IMU_initialized) {
-                if (LSM6DS3_Init(&hi2c1) == 1) {
-                    Kalman_Init(&KalmanRoll);
-                    Kalman_Init(&KalmanPitch);
-                    vmu_current_state->IMU_initialized = true;
+                // Init IMU
+                if (!vmu_current_state->IMU_initialized) {
+                    if (LSM6DS3_Init(&hi2c1) == 1) {
+                        Kalman_Init(&KalmanRoll);
+                        Kalman_Init(&KalmanPitch);
+                        vmu_current_state->IMU_initialized = true;
+                    }
                 }
-            }
 
-            // Init CAN Network
-            if (!vmu_current_state->CAN_initialized) {
-                CAN_FilterTypeDef canfilterconfig;
+                // Init CAN Network
+                if (!vmu_current_state->CAN_initialized) {
+                    CAN_FilterTypeDef canfilterconfig;
 
-                canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
-                canfilterconfig.FilterBank = 0;
-                canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO1;
-                canfilterconfig.FilterIdHigh = 0x0000;
-                canfilterconfig.FilterIdLow = 0x0000;
-                canfilterconfig.FilterMaskIdHigh = 0x0000;
-                canfilterconfig.FilterMaskIdLow = 0x0000;
-                canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
-                canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+                    canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+                    canfilterconfig.FilterBank = 0;
+                    canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO1;
+                    canfilterconfig.FilterIdHigh = 0x0000;
+                    canfilterconfig.FilterIdLow = 0x0000;
+                    canfilterconfig.FilterMaskIdHigh = 0x0000;
+                    canfilterconfig.FilterMaskIdLow = 0x0000;
+                    canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+                    canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
 
-                // Verifies success with HAL functions
-                if (HAL_CAN_ConfigFilter(&hcan, &canfilterconfig) == HAL_OK &&
-                    HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING) == HAL_OK &&
-                    HAL_CAN_Start(&hcan) == HAL_OK) {
-                    
-                    vmu_current_state->CAN_initialized = true;
+                    if (HAL_CAN_ConfigFilter(&hcan, &canfilterconfig) == HAL_OK &&
+                        HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING) == HAL_OK &&
+                        HAL_CAN_Start(&hcan) == HAL_OK) {
+
+                        vmu_current_state->CAN_initialized = true;
+                    }
                 }
-            }
 
-            RPM_Init();
+                RPM_Init();
 
-            /* State update */
+                // --- Lógica de Transição Tolerante a Falhas ---
+                if (vmu_current_state->CAN_initialized && vmu_current_state->IMU_initialized) {
+                    // Cenário Ideal: Tudo ligou, vamos para a pista!
+                    vmu_current_state->current_state = STATE_SELF_CHECK;
+                }
+                else if (vmu_current_state->boot_tries > 50) {
+                    // Timeout: Se passarem ~500ms e a IMU não acordar, joga a ECU pra frente para não
+                    // perder a telemetria do motor (RPM). Ficar preso aqui no Baja é inaceitável.
+                    if (vmu_current_state->CAN_initialized) {
+                        vmu_current_state->current_state = STATE_SELF_CHECK;
+                    } else {
+                        vmu_current_state->current_state = STATE_ERROR; // Sem CAN a ECU é inútil
+                    }
+                }
 
-            // If CAN network was able to start, transition to self check state
-            if (vmu_current_state->CAN_initialized) {
-                /* DEBUG: Blink LED 3 times fast and wait 1 second */
-                vmu_current_state->current_state = STATE_SELF_CHECK;
-            }
-            // If CAN network wasn't able to start, go to error mode (the ECU cannot communicate)
-            else{
-                vmu_current_state->current_state = STATE_ERROR;
-                /* DEBUG: Blink LED 3 times slow and waint 1 second */
-            }
+                // Dá um tempo vital de 10ms para os hardwares externos (IMU) "respirarem"
+                HAL_Delay(10);
+                vmu_current_state->boot_tries += 1;
 
-            vmu_current_state->boot_tries += 1;
+                break;
 
-            break;
+            case STATE_SELF_CHECK:
+                // Só tenta ler os dados se a IMU tiver conseguido sair do boot com vida
+                if (vmu_current_state->IMU_initialized && LSM6DS3_Read(&hi2c1, &lsm6ds3_raw_data)){
+                    vmu_current_state->IMU_ok = true;
+                } else {
+                    vmu_current_state->IMU_ok = false;
+                }
 
-        case STATE_SELF_CHECK:
-            /* Self checks for capability of receiving IMU data and sending it through CAN-bus */
-            /* We don't do the same for RPM since the engine can be off and that's ok, just flip a warning */
-            if (LSM6DS3_Read(&hi2c1, &lsm6ds3_raw_data)){
-                vmu_current_state->IMU_ok = true;
-            }
-            // Now do it for CAN bus
-            // If need be, we can add this later when at least one more ECU is available to send and receive ping packets
-            // For now we can just assume that the CAN bus is healthy
-            vmu_current_state->CAN_ok = true;
+                vmu_current_state->CAN_ok = true;
 
-            if (vmu_current_state->CAN_ok){
-                /* DEBUG: Blink LED 3 times fast and wait 1 second */
-                vmu_current_state->current_state = STATE_RUNNING;
-            } else {
-                /* DEBUG: Blink LED 3 times slow and wait 1 second */
-                vmu_current_state->current_state = STATE_ERROR;
-            }
+                if (vmu_current_state->CAN_ok){
+                    vmu_current_state->current_state = STATE_RUNNING;
+                } else {
+                    vmu_current_state->current_state = STATE_ERROR;
+                }
 
-            break;
+                break;
+
 
         case STATE_RUNNING:
             /* 10ms task -> Read and send RPM */
@@ -117,6 +117,7 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
 
                     if (IMU_Process(&imu_data)) {
                         CAN_Send_IMU(&imu_data);
+
                     } else {
                         // If reading fails mid-race, drop the OK flag
                         vmu_current_state->IMU_ok = false; 
@@ -136,9 +137,10 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
                 CAN_Send_Debug(&debug_packet);
             }
 
-            if (current_tick - last_debug_tick >= 100){
+            if (current_tick - last_led_tick >= 100){
                 /* Blink LED */
-                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); 
+            	last_led_tick = current_tick;
+                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
             }
 
             break;
