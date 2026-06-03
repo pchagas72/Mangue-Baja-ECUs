@@ -32,6 +32,7 @@ uint32_t TxMailbox;
 
 // CAN Reception variables
 CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
 
 // Statemachine super variable
 vmu_state_t ecu_state;
@@ -104,21 +105,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 // === 2. CAN RX CALLBACK FOR FLAGS ===
-//void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
-//{
-//    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK)
-//    {
-        /*
-        // This is a flag reception example
-        if (RxHeader.StdId == 0x304)
-        {
-        rpm_recebido = RxData[0] | (RxData[1] << 8);
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-        }
-        */
-//    }
-//}
-/* USER CODE END 4 */
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK)
+    {
+    }
+}
 
 void Error_Handler(void)
 {
