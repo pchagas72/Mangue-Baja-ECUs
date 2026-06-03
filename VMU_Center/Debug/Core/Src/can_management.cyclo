@@ -1,0 +1,3 @@
+../Core/Src/can_management.c:10:6:CAN_Send_Debug	1
+../Core/Src/can_management.c:31:6:CAN_Send_RPM	1
+../Core/Src/can_management.c:50:6:CAN_Send_IMU	1
