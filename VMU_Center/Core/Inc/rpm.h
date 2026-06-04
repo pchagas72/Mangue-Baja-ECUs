@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define RPM_DELAY 100
 
 void RPM_Init(void);
 uint16_t RPM_Read(void);

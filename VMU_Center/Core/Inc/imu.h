@@ -15,8 +15,6 @@
 #include <math.h>
 #include "i2c.h"
 
-#define IMU_DELAY 100
-
 typedef struct {
     int16_t roll;
     int16_t pitch;

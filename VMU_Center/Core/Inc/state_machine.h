@@ -12,6 +12,10 @@
 #include "stm32f1xx_hal_conf.h"
 #include "stm32f1xx_it.h"
 
+#define RPM_DELAY 100
+#define IMU_DELAY 100
+#define DEBUG_DELAY 10000
+
 enum VMU_CENTER_STATES {
     STATE_BOOT = 0,
     STATE_SELF_CHECK = 1,

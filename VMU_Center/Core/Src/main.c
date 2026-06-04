@@ -106,7 +106,10 @@ void SystemClock_Config(void)
     }
 }
 
-// === 1. Interruption Callback (EXTI) ===
+ /*
+  * Interruption Callback (EXTI)
+  * Callback for optocoupler RPM circuit
+  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == GPIO_PIN_4) // Assumindo PB4 como no código anterior
@@ -115,7 +118,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-// === 2. CAN RX CALLBACK FOR FLAGS ===
+/*
+ * CAN RX callbacks, mostly used for flags such as LOW_BATTERY_MODE
+ */
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK)
@@ -124,6 +129,9 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
+/*
+ * Hard errors just blink the board's LED
+ */
 void Error_Handler(void)
 {
     __disable_irq();

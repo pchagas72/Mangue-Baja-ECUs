@@ -1,8 +1,6 @@
 #include "../Inc/rpm.h"
 #include "stm32f1xx_hal.h"
 
-#define RPM_WARNING_THRESHOLD 3500
-
 volatile uint32_t ultimo_tempo_pulso = 0;
 volatile float rpm_filtrado = 0.0f;
 

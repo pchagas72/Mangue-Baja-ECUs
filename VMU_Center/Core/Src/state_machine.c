@@ -1,10 +1,11 @@
 #include "../Inc/state_machine.h"
 
 /* Defining  ticks for each activity */
+/* Delays  can be found at state_machine.h */
 
 static uint32_t last_rpm_tick = 0;
 static uint32_t last_imu_tick = 0;
-static uint32_t last_debug_tick = -10000;
+static uint32_t last_debug_tick = -10000; // This forces the first packet to send a debug packet
 static uint32_t last_led_tick = 0;
 
 void StateMachine_Init(vmu_state_t *vmu_current_state){
@@ -88,13 +89,15 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
             break;
 
         case STATE_SELF_CHECK:
-            // Só tenta ler os dados se a IMU tiver conseguido sair do boot com vida
+            /* Fills vmu_current_state->ANY_ok */
             if (vmu_current_state->IMU_initialized && LSM6DS3_Read(&hi2c1, &lsm6ds3_raw_data)){
                 vmu_current_state->IMU_ok = true;
             } else {
                 vmu_current_state->IMU_ok = false;
             }
 
+            /* For now, assume CAN is ok */
+            /* Later I'll add a ping packet to confirm connectivity */
             vmu_current_state->CAN_ok = true;
 
             if (vmu_current_state->CAN_ok){

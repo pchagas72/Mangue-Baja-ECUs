@@ -5,8 +5,6 @@
 #include "state_machine.h"
 #include "imu.h"
 
-#define DEBUG_DELAY 10000
-
 typedef struct can_debug_packet{
     uint8_t boot_tries;
     uint8_t current_state;
