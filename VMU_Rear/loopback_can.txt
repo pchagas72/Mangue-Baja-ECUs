@@ -1,0 +1,187 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : ECU FRONT - Baja CAN Simulator & Optocoupler Test
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "can.h"
+#include "i2c.h"
+#include "gpio.h"
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN PV */
+CAN_TxHeaderTypeDef TxHeader;
+uint32_t TxMailbox;
+
+// Variáveis de Recepção CAN
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
+uint16_t rpm_recebido = 0;
+
+// Variável Global do Optoacoplador (Volatile porque muda na interrupção)
+volatile uint32_t contador_pulsos = 0;
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* MCU Configuration--------------------------------------------------------*/
+  HAL_Init();
+
+  /* Configure the system clock to 72 MHz (HSE 8MHz) */
+  SystemClock_Config();
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_CAN_Init(); // Lembre-se: Este deve estar configurado como CAN_MODE_LOOPBACK no can.c para hoje
+  MX_I2C1_Init();
+
+  /* USER CODE BEGIN 2 */
+  CAN_FilterTypeDef canfilterconfig;
+
+  // Configuração do filtro CAN "passa-tudo" direcionado ao FIFO1
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 0;
+  canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO1;
+  canfilterconfig.FilterIdHigh = 0x0000;
+  canfilterconfig.FilterIdLow = 0x0000;
+  canfilterconfig.FilterMaskIdHigh = 0x0000;
+  canfilterconfig.FilterMaskIdLow = 0x0000;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+
+  // Aplica o filtro, ativa interrupção e dá a partida na CAN
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING);
+  HAL_CAN_Start(&hcan);
+
+  // Garante que o LED PC13 comece apagado (Lógica Invertida: SET = OFF)
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+      // 1. CALCULA O RPM REAL BASEADO NA INTERRUPÇÃO (PB4)
+      // Pulsos em 100ms * 10 = Pulsos por segundo. * 60 = RPM.
+      uint16_t rpm_real = contador_pulsos * 10 * 60;
+
+      // Zera o contador para a próxima janela de tempo (próximos 100ms)
+      contador_pulsos = 0;
+
+      // 2. PREPARA O PACOTE CAN (Padrão Industrial Little-Endian)
+      TxHeader.StdId = 0x304;       // ID do RPM
+      TxHeader.ExtId = 0;
+      TxHeader.IDE = CAN_ID_STD;    // ID Padrão
+      TxHeader.RTR = CAN_RTR_DATA;  // Dados reais
+      TxHeader.DLC = 2;             // 2 bytes
+      TxHeader.TransmitGlobalTime = DISABLE;
+
+      uint8_t dados_can[2];
+      dados_can[0] = rpm_real & 0xFF;        // LSB primeiro (Byte 0)
+      dados_can[1] = (rpm_real >> 8) & 0xFF; // MSB depois (Byte 1)
+
+      // 3. ENVIA PARA A REDE CAN
+      HAL_CAN_AddTxMessage(&hcan, &TxHeader, dados_can, &TxMailbox);
+
+      // 4. ESPERA 100ms (10Hz)
+      HAL_Delay(100);
+
+  /* USER CODE END WHILE */
+  }
+}
+
+/**
+  * @brief System Clock Configuration (Apenas HSE a 72MHz)
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+
+// === 1. CALLBACK DE INTERRUPÇÃO EXTERNA (OPTOACOPLADOR / MOTOR) ===
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_4) // Pino PB4 da placa customizada
+    {
+        // Conta uma faísca do motor
+        contador_pulsos++;
+
+        // Pisca o LED PC13 para confirmar visualmente a entrada de sinal
+        // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    }
+}
+
+// === 2. CALLBACK DE RECEPÇÃO CAN (LOOPBACK/NORMAL) ===
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK)
+    {
+        if (RxHeader.StdId == 0x304)
+        {
+            // Desempacota em Little-Endian (Igual ao transmissor e a ESP32)
+            rpm_recebido = RxData[0] | (RxData[1] << 8);
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
+            // Nota: O TogglePin do PC13 foi removido daqui para focar
+            // a luz apenas no teste do optoacoplador PB4!
+        }
+    }
+}
+/* USER CODE END 4 */
+
+void Error_Handler(void)
+{
+  __disable_irq();
+  while (1)
+  {
+      // Em caso de erro fatal, pisca em loop infinito
+      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+      for(volatile int i=0; i<100000; i++);
+  }
+}
+
+#ifdef  USE_FULL_ASSERT
+void assert_failed(uint8_t *file, uint32_t line)
+{
+}
+#endif /* USE_FULL_ASSERT */
+

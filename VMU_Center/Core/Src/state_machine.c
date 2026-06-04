@@ -115,7 +115,7 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
                 last_rpm_tick = current_tick;
 
                 uint16_t current_rpm = RPM_Read();
-                vmu_current_state->RPM_warning = RPM_CheckWarning(current_rpm);
+                vmu_current_state->RPM_warning = RPM_CheckWarning();
 
                 CAN_Send_RPM(current_rpm);
             }

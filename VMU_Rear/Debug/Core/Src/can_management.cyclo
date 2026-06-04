@@ -1,0 +1,5 @@
+../Core/Src/can_management.c:4:6:CAN_Send_Speed	1
+../Core/Src/can_management.c:22:6:CAN_Send_Voltage	1
+../Core/Src/can_management.c:40:6:CAN_Send_Temp_NTC	1
+../Core/Src/can_management.c:58:6:CAN_Send_Temp_CVT	1
+../Core/Src/can_management.c:76:6:CAN_Send_Debug	1
