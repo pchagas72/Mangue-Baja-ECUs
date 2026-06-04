@@ -1,24 +1,29 @@
-/**
+ /*
  ******************************************************************************
- * @file           : main.c
- * @brief          : VMU_Center - ECU that integrates IMU data + optocoupler
- * to a baja-SAE vehicle CAN network.
+ * @file
+ * - main.c
+ *
+ * @brief
+ * - Firmware for a baja-SAE ECU that acquires engine RPM and vehicle roll and pitch
+ *   via a otpocoupler circuit and LSM6DS3 IMU sensor. The data is sent through CAN
+ *   network to other ECU's that store and broadcast data.
  ******************************************************************************
  */
 
-/* Default includes */
-/* All made by stm32cubeIDE */
+/* Includes */
+
+/* Standard libraries and STM32CubeIDE includes */
 #include "../Inc/main.h"
 #include "can.h"
 #include "i2c.h"
 #include "gpio.h"
-#include "rpm.h"
-#include "../Inc/state_machine.h"
+#include <math.h> // Necessary for IMU calculations (atan2, sqrt)
 
 /* User includes */
+#include "rpm.h"
+#include "../Inc/state_machine.h"
 #include "kalman.h"
 #include "lsm6ds3.h"
-#include <math.h> // Necessary for IMU calculations (atan2, sqrt)
 
 /* Private Variables */
 
@@ -44,17 +49,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan);
 void Error_Handler(void);
 
+/* Main function and state machine superloop */
+
 int main(void) {
+
+    /* Initializing HAL and microcontroler features */
+
     HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
     MX_CAN_Init();
     MX_I2C1_Init();
 
+    /* Initializing statemachine variables */
+
     StateMachine_Init(&ecu_state); // Inicia a FSM
 
     while (1) {
-        StateMachine_Update(&ecu_state); // O coração da ECU bate aqui
+        /* Please read state_machine.c */
+        StateMachine_Update(&ecu_state);
     }
 }
 
@@ -93,9 +106,7 @@ void SystemClock_Config(void)
     }
 }
 
-/* User Function Definitions */
-
-// === 1. Callback da Interrupção (EXTI) ===
+// === 1. Interruption Callback (EXTI) ===
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == GPIO_PIN_4) // Assumindo PB4 como no código anterior
@@ -109,6 +120,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK)
     {
+        /* Later check for low_battery flag and debug flag */
     }
 }
 

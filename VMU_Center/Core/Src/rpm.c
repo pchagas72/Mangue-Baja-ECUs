@@ -19,11 +19,11 @@ uint16_t RPM_Read(void) {
     return (uint16_t)rpm_filtrado;
 }
 
-bool RPM_CheckWarning(uint16_t current_rpm) {
-    return (current_rpm >= RPM_WARNING_THRESHOLD);
+bool RPM_CheckWarning(void) {
+    return (rpm_filtrado == 0); // Stalled warning
 }
 
-// Esta função deve ser chamada dentro de HAL_GPIO_EXTI_Callback no main.c ou stm32f1xx_it.c
+// This function must be called inside HAL_GPIO_EXTI_Callback in main.c
 void RPM_EXTI_Callback(void) {
     uint32_t tempo_atual = HAL_GetTick();
     uint32_t delta_t = tempo_atual - ultimo_tempo_pulso;

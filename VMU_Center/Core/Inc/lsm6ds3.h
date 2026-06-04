@@ -2,11 +2,12 @@
 #define LSM6DS3_H
 
 #include "stm32f1xx_hal.h"
+#include <stdint.h>
 
-// Endereço travado em 0xD6 pois o pino SDO/SA0 está em 3.3V
+// Always check address, this one is 0xD6 since SDO/SA0 is 3.3v
 #define LSM6DS3_ADDR 0xD6
 
-// Registradores principais do sensor
+// Main registers on the LSM6DS3
 #define LSM6DS3_WHO_AM_I 0x0F
 #define LSM6DS3_CTRL1_XL 0x10
 #define LSM6DS3_CTRL2_G  0x11

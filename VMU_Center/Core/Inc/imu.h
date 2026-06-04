@@ -1,3 +1,9 @@
+/*
+ * @brief: 
+ * - This code gets the raw readings from the lsm6ds3.c file
+ *   and converts them to readable and processed roll and pitch.
+ */
+
 #ifndef IMU_H
 #define IMU_H
 

@@ -3262,8 +3262,9 @@ LOAD /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-
                 0x08001bd4       0x38 ./Core/Src/rpm.o
                 0x08001bd4                RPM_Read
  .text.RPM_CheckWarning
-                0x08001c0c       0x24 ./Core/Src/rpm.o
+                0x08001c0c       0x22 ./Core/Src/rpm.o
                 0x08001c0c                RPM_CheckWarning
+ *fill*         0x08001c2e        0x2 
  .text.RPM_EXTI_Callback
                 0x08001c30       0x7c ./Core/Src/rpm.o
                 0x08001c30                RPM_EXTI_Callback
@@ -3629,81 +3630,81 @@ LOAD /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-
 .rel.dyn        0x080051f8        0x0
  .rel.iplt      0x080051f8        0x0 /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/thumb/v7-m/nofp/crtbegin.o
 
-.data           0x20000000       0x5c load address 0x080051f8
+.data           0x20000000       0x60 load address 0x080051f8
                 0x20000000                        . = ALIGN (0x4)
                 0x20000000                        _sdata = .
  *(.data)
  *(.data*)
+ .data.last_debug_tick
+                0x20000000        0x4 ./Core/Src/state_machine.o
  .data.SystemCoreClock
-                0x20000000        0x4 ./Core/Src/system_stm32f1xx.o
-                0x20000000                SystemCoreClock
+                0x20000004        0x4 ./Core/Src/system_stm32f1xx.o
+                0x20000004                SystemCoreClock
  .data.uwTickPrio
-                0x20000004        0x4 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
-                0x20000004                uwTickPrio
+                0x20000008        0x4 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
+                0x20000008                uwTickPrio
  .data.uwTickFreq
-                0x20000008        0x1 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
-                0x20000008                uwTickFreq
- *fill*         0x20000009        0x3 
+                0x2000000c        0x1 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
+                0x2000000c                uwTickFreq
+ *fill*         0x2000000d        0x3 
  .data._impure_ptr
-                0x2000000c        0x4 /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(libc_a-impure.o)
-                0x2000000c                _impure_ptr
+                0x20000010        0x4 /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(libc_a-impure.o)
+                0x20000010                _impure_ptr
  .data._impure_data
-                0x20000010       0x4c /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(libc_a-impure.o)
-                0x20000010                _impure_data
+                0x20000014       0x4c /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(libc_a-impure.o)
+                0x20000014                _impure_data
  *(.RamFunc)
  *(.RamFunc*)
-                0x2000005c                        . = ALIGN (0x4)
-                0x2000005c                        _edata = .
+                0x20000060                        . = ALIGN (0x4)
+                0x20000060                        _edata = .
 
-.igot.plt       0x2000005c        0x0 load address 0x08005254
- .igot.plt      0x2000005c        0x0 /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/thumb/v7-m/nofp/crtbegin.o
-                0x2000005c                        . = ALIGN (0x4)
+.igot.plt       0x20000060        0x0 load address 0x08005258
+ .igot.plt      0x20000060        0x0 /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/thumb/v7-m/nofp/crtbegin.o
+                0x20000060                        . = ALIGN (0x4)
 
-.bss            0x2000005c      0x288 load address 0x08005254
-                0x2000005c                        _sbss = .
-                0x2000005c                        __bss_start__ = _sbss
+.bss            0x20000060      0x284 load address 0x08005258
+                0x20000060                        _sbss = .
+                0x20000060                        __bss_start__ = _sbss
  *(.bss)
- .bss           0x2000005c       0x1c /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/thumb/v7-m/nofp/crtbegin.o
+ .bss           0x20000060       0x1c /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin/../lib/gcc/arm-none-eabi/14.3.1/thumb/v7-m/nofp/crtbegin.o
  *(.bss*)
- .bss.hcan      0x20000078       0x28 ./Core/Src/can.o
-                0x20000078                hcan
- .bss.hi2c1     0x200000a0       0x54 ./Core/Src/i2c.o
-                0x200000a0                hi2c1
+ .bss.hcan      0x2000007c       0x28 ./Core/Src/can.o
+                0x2000007c                hcan
+ .bss.hi2c1     0x200000a4       0x54 ./Core/Src/i2c.o
+                0x200000a4                hi2c1
  .bss.KalmanRoll
-                0x200000f4       0x28 ./Core/Src/imu.o
-                0x200000f4                KalmanRoll
+                0x200000f8       0x28 ./Core/Src/imu.o
+                0x200000f8                KalmanRoll
  .bss.KalmanPitch
-                0x2000011c       0x28 ./Core/Src/imu.o
-                0x2000011c                KalmanPitch
- .bss.imu_data  0x20000144        0x4 ./Core/Src/imu.o
-                0x20000144                imu_data
+                0x20000120       0x28 ./Core/Src/imu.o
+                0x20000120                KalmanPitch
+ .bss.imu_data  0x20000148        0x4 ./Core/Src/imu.o
+                0x20000148                imu_data
  .bss.lsm6ds3_raw_data
-                0x20000148        0xc ./Core/Src/imu.o
-                0x20000148                lsm6ds3_raw_data
+                0x2000014c        0xc ./Core/Src/imu.o
+                0x2000014c                lsm6ds3_raw_data
  .bss.ultimo_tick
-                0x20000154        0x4 ./Core/Src/imu.o
+                0x20000158        0x4 ./Core/Src/imu.o
  .bss.endereco_descoberto_stm32
-                0x20000158        0x1 ./Core/Src/lsm6ds3.o
-                0x20000158                endereco_descoberto_stm32
- *fill*         0x20000159        0x3 
- .bss.RxHeader  0x2000015c       0x1c ./Core/Src/main.o
-                0x2000015c                RxHeader
- .bss.RxData    0x20000178        0x8 ./Core/Src/main.o
-                0x20000178                RxData
+                0x2000015c        0x1 ./Core/Src/lsm6ds3.o
+                0x2000015c                endereco_descoberto_stm32
+ *fill*         0x2000015d        0x3 
+ .bss.RxHeader  0x20000160       0x1c ./Core/Src/main.o
+                0x20000160                RxHeader
+ .bss.RxData    0x2000017c        0x8 ./Core/Src/main.o
+                0x2000017c                RxData
  .bss.ecu_state
-                0x20000180       0x10 ./Core/Src/main.o
-                0x20000180                ecu_state
+                0x20000184       0x10 ./Core/Src/main.o
+                0x20000184                ecu_state
  .bss.ultimo_tempo_pulso
-                0x20000190        0x4 ./Core/Src/rpm.o
-                0x20000190                ultimo_tempo_pulso
- .bss.rpm_filtrado
                 0x20000194        0x4 ./Core/Src/rpm.o
-                0x20000194                rpm_filtrado
+                0x20000194                ultimo_tempo_pulso
+ .bss.rpm_filtrado
+                0x20000198        0x4 ./Core/Src/rpm.o
+                0x20000198                rpm_filtrado
  .bss.last_rpm_tick
-                0x20000198        0x4 ./Core/Src/state_machine.o
- .bss.last_imu_tick
                 0x2000019c        0x4 ./Core/Src/state_machine.o
- .bss.last_debug_tick
+ .bss.last_imu_tick
                 0x200001a0        0x4 ./Core/Src/state_machine.o
  .bss.last_led_tick
                 0x200001a4        0x4 ./Core/Src/state_machine.o
@@ -3717,7 +3718,7 @@ LOAD /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-
                 0x200002e4                        __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x200002e4      0x604 load address 0x08005254
+                0x200002e4      0x604 load address 0x08005258
                 0x200002e8                        . = ALIGN (0x8)
  *fill*         0x200002e4        0x4 
                 [!provide]                        PROVIDE (end = .)

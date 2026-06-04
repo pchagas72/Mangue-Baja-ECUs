@@ -1,5 +1,9 @@
 #include "lsm6ds3.h"
 
+/*
+ * TODO: Translate this code to fit design choices.
+ */
+
 uint8_t endereco_descoberto_stm32 = 0x00;
 
 uint8_t LSM6DS3_Init(I2C_HandleTypeDef *hi2c) {
