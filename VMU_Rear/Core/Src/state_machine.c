@@ -5,10 +5,10 @@
 #include "can.h"  // Resolve hcan
 #include "i2c.h"  // Resolve hi2c1
 
-/* Variável global que vem do main.c via EXTI (Sensor Indutivo) */
+/* Global variable that comes from main.c via EXTI (Inductive Sensor) */
 extern volatile uint32_t contador_pulsos_indutivo;
 
-/* Timers estáticos para o Superloop Não-Bloqueante */
+/* Static timers for the state machine superloop */
 static uint32_t last_speed_tick = 0;
 static uint32_t last_adc_tick = 0;
 static uint32_t last_mlx_tick = 0;
@@ -31,20 +31,15 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
     switch (tcu_current_state->current_state) {
 
         case STATE_BOOT:
-            // 1. Init MLX90614 Sensor
+
+            /* Init MLX90614 Sensor */
             if (!tcu_current_state->MLX_initialized) {
                 if (HAL_I2C_IsDeviceReady(&hi2c1, MLX90614_I2C_ADDR, 3, 10) == HAL_OK) {
                     tcu_current_state->MLX_initialized = true;
-                    for (int i = 0; i <6; i++){
-                    	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-                    	HAL_Delay(30);
-                    }
-
-                    HAL_Delay(500);
                 }
             }
 
-            // 2. Init CAN Network
+            /* Init CAN */
             if (!tcu_current_state->CAN_initialized) {
                 CAN_FilterTypeDef canfilterconfig;
                 canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
@@ -58,36 +53,33 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                 canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
 
                 if (HAL_CAN_ConfigFilter(&hcan, &canfilterconfig) == HAL_OK &&
-                    HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING) == HAL_OK &&
-                    HAL_CAN_Start(&hcan) == HAL_OK) {
+                        HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING) == HAL_OK &&
+                        HAL_CAN_Start(&hcan) == HAL_OK) {
                     tcu_current_state->CAN_initialized = true;
                 }
             }
 
-            /* Transição de Boot (50 tentativas = 500ms) */
+            /* Tries to initialize everything 50 times */
             if (tcu_current_state->CAN_initialized && tcu_current_state->MLX_initialized) {
+                /* ALL OK */
                 tcu_current_state->current_state = STATE_SELF_CHECK;
-                for (int i = 0; i <6; i++){
-                	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-                	HAL_Delay(30);
-                }
-
-                HAL_Delay(500);
             } else if (tcu_current_state->boot_tries > 50) {
+                /* If some inits aren't able, try to run on partial mode */
                 if (tcu_current_state->CAN_initialized) {
+                    /* No CAN temperature */
                     tcu_current_state->current_state = STATE_SELF_CHECK; // Avanca mesmo sem o MLX
                 } else {
-                    tcu_current_state->current_state = STATE_ERROR; // Sem a CAN a ECU não tem utilidade
+                    /* Without CAN, the ECU is useless. Go to error */
+                    tcu_current_state->current_state = STATE_ERROR;
                 }
             }
-
             HAL_Delay(10);
             tcu_current_state->boot_tries += 1;
             break;
 
 
         case STATE_SELF_CHECK:
-            // Testa se a I2C está lendo algo real
+            /* Tests I²C communication with MLX90614 */
             if (tcu_current_state->MLX_initialized) {
                 uint8_t mlx_test[3];
                 if (HAL_I2C_Mem_Read(&hi2c1, MLX90614_I2C_ADDR, MLX90614_REG_TOBJ1, I2C_MEMADD_SIZE_8BIT, mlx_test, 3, 10) == HAL_OK) {
@@ -109,10 +101,10 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
             }
             break;
 
-
         case STATE_RUNNING:
 
-            /* 100ms Task -> Lê e envia Velocidade */
+            /* 100ms task */
+            /* Reads and sends speed */
             if (current_tick - last_speed_tick >= SPEED_DELAY) {
                 uint32_t dt_ms = current_tick - last_speed_tick;
                 last_speed_tick = current_tick;
@@ -131,12 +123,14 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                 CAN_Send_Speed((uint16_t)speed_kmh);
             }
 
-            /* 100ms Task -> Lê e envia ADC (Voltagem + Temperatura Motor) */
+            /* 100ms task */
+            /* Reads and sends ADC data (voltage + motor temperature) */
             if (current_tick - last_adc_tick >= ADC_DELAY) {
                 last_adc_tick = current_tick;
                 ADC_ChannelConfTypeDef sConfig = {0};
 
-                // Leitura Canal 4 (Voltagem)
+                /* Reads channel 4 */
+                /* Voltage */
                 sConfig.Channel = ADC_CHANNEL_4;
                 sConfig.Rank = ADC_REGULAR_RANK_1;
                 sConfig.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
@@ -152,7 +146,8 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                 }
                 HAL_ADC_Stop(&hadc1);
 
-                // Leitura Canal 0 (NTC)
+                /* Reads channel 0 */
+                /* NTC (motor temperature) */
                 sConfig.Channel = ADC_CHANNEL_0;
                 HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
@@ -170,23 +165,34 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                 HAL_ADC_Stop(&hadc1);
             }
 
-            /* 100ms Task -> Lê e envia Temperatura CVT via MLX90614 */
-            if (tcu_current_state->MLX_ok && (current_tick - last_mlx_tick >= MLX_DELAY)) {
+            /* 100ms task */
+            /* Reads and sends MLX90614 data (CVT temperature) */
+            if (current_tick - last_mlx_tick >= MLX_DELAY) { // Removida a trava MLX_ok daqui!
                 last_mlx_tick = current_tick;
                 uint8_t mlx_data[3];
 
-                if (HAL_I2C_Mem_Read(&hi2c1, MLX90614_I2C_ADDR, MLX90614_REG_TOBJ1, I2C_MEMADD_SIZE_8BIT, mlx_data, 3, 10) == HAL_OK) {
+                if (HAL_I2C_Mem_Read(&hi2c1, MLX90614_I2C_ADDR, MLX90614_REG_TOBJ1, I2C_MEMADD_SIZE_8BIT, mlx_data, 3, 50) == HAL_OK) {
+                    tcu_current_state->MLX_ok = true; // Se leu certo, garante que a flag está true
+
                     uint16_t temp_raw = (mlx_data[1] << 8) | mlx_data[0];
                     float temp_kelvin = temp_raw * 0.02f;
                     float mlx_temperature_celsius = temp_kelvin - 273.15f;
 
                     CAN_Send_Temp_CVT((int16_t)(mlx_temperature_celsius * 100.0f));
                 } else {
-                    tcu_current_state->MLX_ok = false; // Se a leitura falhar, derruba a flag
+                    tcu_current_state->MLX_ok = false; // Avisa o pacote de debug que houve falha, mas tentará de novo no próximo loop
                 }
             }
 
-            /* 5000ms Task -> Pacote de Saúde/Debug (Health Package) */
+            /* 100ms task */
+            /* Heartbeat LED blink */
+            if (current_tick - last_led_tick >= 100){
+                last_led_tick = current_tick;
+                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+            }
+
+            /* 5000ms Task */
+            /* Debug CAN package */
             if (current_tick - last_debug_tick >= DEBUG_DELAY) {
                 last_debug_tick = current_tick;
                 can_debug_packet_t debug_packet;
@@ -197,25 +203,17 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
 
                 CAN_Send_Debug(&debug_packet);
             }
-
-            /* Pisca LED de Heartbeat (100ms) */
-            if (current_tick - last_led_tick >= 100){
-                last_led_tick = current_tick;
-                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-            }
             break;
 
-
         case STATE_ERROR:
-            /* Tenta reiniciar o processo 10 vezes em caso de falha severa */
+            /* Tries to restart state machine 10 times in case of errors */
             if (tcu_current_state->boot_tries < 500) {
                 HAL_Delay(1000);
                 StateMachine_Init(tcu_current_state);
                 for (int i = 0; i <60; i++){
-                	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-                	HAL_Delay(30);
+                    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+                    HAL_Delay(30);
                 }
-
                 HAL_Delay(500);
             }
             break;

@@ -4,10 +4,10 @@
 #include "i2c.h"
 #include "gpio.h"
 
-/* Inclusão da Máquina de Estados */
+/* Include state machine */
 #include "state_machine.h"
 
-/* Variáveis Globais Essenciais */
+/* Essential global variables */
 volatile uint32_t contador_pulsos_indutivo = 0;
 tcu_state_t ecu_state;
 
@@ -15,7 +15,7 @@ void SystemClock_Config(void);
 
 int main(void) {
 
-    /* Configuração padrão do STM32CubeIDE */
+    /* Default configs for STM32CubeIDE */
     HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
@@ -23,17 +23,17 @@ int main(void) {
     MX_I2C1_Init();
     MX_ADC1_Init();
 
-    // Inicia e constrói a FSM da TCU
+    /* Starts and builds FSM */
     StateMachine_Init(&ecu_state);
 
     while (1) {
-        // Tudo acontece aqui sem nenhum HAL_Delay() travando a MCU
+        /* State machine, please read state_machine.c */
         StateMachine_Update(&ecu_state);
     }
 }
 
-/**
- * Interrupção do Sensor Indutivo
+/*
+ * Inductive sensor interruption
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_1) { // Pino PB1 (Sensor Indutivo)
@@ -42,7 +42,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 
 void SystemClock_Config(void) {
-    // Configurações do Clock geradas pelo seu CubeMX (Mantidas do seu main anterior)
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
     RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -76,16 +75,18 @@ void SystemClock_Config(void) {
     }
 }
 
-/* Callback chamado automaticamente pelo hardware quando chega um pacote CAN */
+/*
+ * CAN RX Callback
+ * Always put something here.
+ * If you don't the ECU might get bricked whenever it receives something on CAN bus.
+ */
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     CAN_RxHeaderTypeDef RxHeader;
     uint8_t RxData[8];
 
-    // Apenas ler a mensagem da FIFO é suficiente para o hardware
-    // limpar a flag de interrupção e parar de travar a placa.
+    /* Reads the message */
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK) {
-        // Futuramente, se a TCU precisar receber dados (ex: Dashboard),
-        // você coloca os seus "Ifs" de leitura aqui!
+        /* Check for flags here later */
     }
 }
 

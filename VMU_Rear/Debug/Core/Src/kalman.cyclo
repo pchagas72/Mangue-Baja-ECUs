@@ -1,2 +1,0 @@
-../Core/Src/kalman.c:11:6:Kalman_Init	1
-../Core/Src/kalman.c:23:7:Kalman_getAngle	1

@@ -1,2 +1,2 @@
 ../Core/Src/state_machine.c:18:6:StateMachine_Init	16	static
-../Core/Src/state_machine.c:27:6:StateMachine_Update	176	static,ignoring_inline_asm
+../Core/Src/state_machine.c:27:6:StateMachine_Update	168	static,ignoring_inline_asm
