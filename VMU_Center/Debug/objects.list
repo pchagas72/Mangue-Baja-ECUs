@@ -6,6 +6,7 @@
 "./Core/Src/kalman.o"
 "./Core/Src/lsm6ds3.o"
 "./Core/Src/main.o"
+"./Core/Src/new_main.o"
 "./Core/Src/rpm.o"
 "./Core/Src/state_machine.o"
 "./Core/Src/stm32f1xx_hal_msp.o"

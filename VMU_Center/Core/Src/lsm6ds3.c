@@ -1,9 +1,5 @@
 #include "lsm6ds3.h"
 
-/*
- * TODO: Translate this code to fit design choices.
- */
-
 uint8_t endereco_descoberto_stm32 = 0x00;
 
 uint8_t LSM6DS3_Init(I2C_HandleTypeDef *hi2c) {
@@ -49,13 +45,13 @@ uint8_t LSM6DS3_Read(I2C_HandleTypeDef *hi2c, LSM6DS3_Data_t *data) {
     if(endereco_descoberto_stm32 == 0x00) return 0;
 
     if (HAL_I2C_Mem_Read(hi2c, endereco_descoberto_stm32, LSM6DS3_OUTX_L_G, I2C_MEMADD_SIZE_8BIT, raw_buffer, 12, 100) == HAL_OK) {
-        data->gyr_x = (int16_t)(raw_buffer[0] | (raw_buffer[1] << 8));
-        data->gyr_y = (int16_t)(raw_buffer[2] | (raw_buffer[3] << 8));
-        data->gyr_z = (int16_t)(raw_buffer[4] | (raw_buffer[5] << 8));
+        data->gyr_x = (int16_t)(raw_buffer[0] | (raw_buffer[1] << 8)); // Real X
+        data->gyr_y = (int16_t)(raw_buffer[2] | (raw_buffer[3] << 8)); // Real Y
+        data->gyr_z = (int16_t)(raw_buffer[4] | (raw_buffer[5] << 8)); // Real Z
 
-        data->acc_x = (int16_t)(raw_buffer[6] | (raw_buffer[7] << 8));
-        data->acc_y = (int16_t)(raw_buffer[8] | (raw_buffer[9] << 8));
-        data->acc_z = (int16_t)(raw_buffer[10] | (raw_buffer[11] << 8));
+        data->acc_x = (int16_t)(raw_buffer[6] | (raw_buffer[7] << 8)); // Real X
+        data->acc_y = (int16_t)(raw_buffer[8] | (raw_buffer[9] << 8)); // Real Y
+        data->acc_z = (int16_t)(raw_buffer[10] | (raw_buffer[11] << 8)); // Real Z
 
         return 1;
     }

@@ -30,7 +30,7 @@ Core/Src/can_management.o: ../Core/Src/can_management.c \
  ../Core/Src/../Inc/rpm.h ../Core/Src/../Inc/can.h \
  ../Core/Src/../Inc/can_management.h \
  ../Core/Src/../Inc/stm32f1xx_hal_conf.h \
- ../Core/Src/../Inc/stm32f1xx_it.h
+ ../Core/Src/../Inc/stm32f1xx_it.h ../Core/Src/../Inc/low_voltage_mode.h
 ../Core/Src/../Inc/can_management.h:
 ../Core/Src/../Inc/state_machine.h:
 ../Core/Src/../Inc/lsm6ds3.h:
@@ -67,3 +67,4 @@ Core/Src/can_management.o: ../Core/Src/can_management.c \
 ../Core/Src/../Inc/can_management.h:
 ../Core/Src/../Inc/stm32f1xx_hal_conf.h:
 ../Core/Src/../Inc/stm32f1xx_it.h:
+../Core/Src/../Inc/low_voltage_mode.h:

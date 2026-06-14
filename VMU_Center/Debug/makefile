@@ -34,37 +34,37 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := VMU_Center
+BUILD_ARTIFACT_NAME := VMU_Center_local
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-VMU_Center.elf \
+VMU_Center_local.elf \
 
 MAP_FILES += \
-VMU_Center.map \
+VMU_Center_local.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-VMU_Center.list \
+VMU_Center_local.list \
 
 OBJCOPY_BIN += \
-VMU_Center.bin \
+VMU_Center_local.bin \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: VMU_Center.elf secondary-outputs
+main-build: VMU_Center_local.elf secondary-outputs
 
 # Tool invocations
-VMU_Center.elf VMU_Center.map: $(OBJS) $(USER_OBJS) /home/pedro/Mangue-Baja-ECUs/VMU_Center/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "VMU_Center.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/pedro/Mangue-Baja-ECUs/VMU_Center/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VMU_Center.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+VMU_Center_local.elf VMU_Center_local.map: $(OBJS) $(USER_OBJS) /home/pedro/.local/stm32/VMU_Center_local/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "VMU_Center_local.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/pedro/.local/stm32/VMU_Center_local/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VMU_Center_local.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -73,19 +73,19 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-VMU_Center.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "VMU_Center.list"
+VMU_Center_local.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "VMU_Center_local.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-VMU_Center.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "VMU_Center.bin"
+VMU_Center_local.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "VMU_Center_local.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) VMU_Center.bin VMU_Center.elf VMU_Center.list VMU_Center.map default.size.stdout
+	-$(RM) VMU_Center_local.bin VMU_Center_local.elf VMU_Center_local.list VMU_Center_local.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)

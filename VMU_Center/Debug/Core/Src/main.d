@@ -30,8 +30,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Src/../Inc/main.h \
  ../Core/Src/../Inc/rpm.h ../Core/Src/../Inc/can.h \
  ../Core/Src/../Inc/can_management.h ../Core/Src/../Inc/state_machine.h \
  ../Core/Src/../Inc/stm32f1xx_hal_conf.h \
- ../Core/Src/../Inc/stm32f1xx_it.h ../Core/Inc/kalman.h \
- ../Core/Inc/lsm6ds3.h
+ ../Core/Src/../Inc/stm32f1xx_it.h ../Core/Src/../Inc/low_voltage_mode.h \
+ ../Core/Inc/kalman.h ../Core/Inc/lsm6ds3.h
 ../Core/Src/../Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -73,5 +73,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Src/../Inc/main.h \
 ../Core/Src/../Inc/state_machine.h:
 ../Core/Src/../Inc/stm32f1xx_hal_conf.h:
 ../Core/Src/../Inc/stm32f1xx_it.h:
+../Core/Src/../Inc/low_voltage_mode.h:
 ../Core/Inc/kalman.h:
 ../Core/Inc/lsm6ds3.h:

@@ -11,10 +11,7 @@
 #include "can_management.h"
 #include "stm32f1xx_hal_conf.h"
 #include "stm32f1xx_it.h"
-
-#define RPM_DELAY 100
-#define IMU_DELAY 100
-#define DEBUG_DELAY 10000
+#include "low_voltage_mode.h"
 
 enum VMU_CENTER_STATES {
     STATE_BOOT = 0,
@@ -23,16 +20,6 @@ enum VMU_CENTER_STATES {
     STATE_ERROR = -1,
 };
 
-/* 
- * current_state: Statemachine current job
- * boot_tries: Number of times the statemachine tried to start components
- * IMU_initialized: True if the I²C communication with the sensor is alive
- * IMU_ok: True if the sensor is sending live data
- * CAN_initialized: True if the CAN communication HAL could be initialized
- * CAN_ok: True if the CAN communication is tested by ping packages
- * Makes no sense to initialize RPM
- * RPM_warning: This warning tells if the car is either stalled or the RPM circuit is dead
- */
 typedef struct vmu_state{
     enum VMU_CENTER_STATES current_state;
     int boot_tries;
@@ -40,7 +27,10 @@ typedef struct vmu_state{
     bool IMU_ok;
     bool CAN_initialized;
     bool CAN_ok;
+    /* Makes no sense to initialize RPM */
+    /* This warning works like an engine light */
     bool RPM_warning;
+    bool low_voltage;
 } vmu_state_t;
 
 void StateMachine_Init(vmu_state_t *vmu_current_state);

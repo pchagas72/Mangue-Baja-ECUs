@@ -29,7 +29,7 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
  ../Core/Src/../Inc/rpm.h ../Core/Src/../Inc/can.h \
  ../Core/Src/../Inc/can_management.h ../Core/Src/../Inc/state_machine.h \
  ../Core/Src/../Inc/stm32f1xx_hal_conf.h \
- ../Core/Src/../Inc/stm32f1xx_it.h
+ ../Core/Src/../Inc/stm32f1xx_it.h ../Core/Src/../Inc/low_voltage_mode.h
 ../Core/Src/../Inc/state_machine.h:
 ../Core/Src/../Inc/lsm6ds3.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -66,3 +66,4 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
 ../Core/Src/../Inc/state_machine.h:
 ../Core/Src/../Inc/stm32f1xx_hal_conf.h:
 ../Core/Src/../Inc/stm32f1xx_it.h:
+../Core/Src/../Inc/low_voltage_mode.h:

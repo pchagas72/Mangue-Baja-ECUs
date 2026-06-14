@@ -2,10 +2,16 @@
 #include "stm32f1xx_hal.h"
 
 extern CAN_HandleTypeDef hcan;
+extern vmu_state_t ecu_state;
 
+/* Sending */
 #define CAN_ID_DEBUG  0x102
 #define CAN_ID_IMU    0x205
 #define CAN_ID_RPM    0x304
+
+/* Receiving*/
+#define CAN_ID_VOLTAGE_REAR 0x502
+#define LOW_VOLTAGE_THRESHOLD 1050
 
 void CAN_Send_Debug(can_debug_packet_t *debug_packet){
     CAN_TxHeaderTypeDef TxHeader;
@@ -66,4 +72,27 @@ void CAN_Send_IMU(imu_processed_data_t *imu_data) {
     TxData[3] = (imu_data->pitch >> 8) & 0xFF;
 
     HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+}
+
+// Callback for FIFO1 where your filter drops the messages
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+    CAN_RxHeaderTypeDef RxHeader;
+    uint8_t RxData[8];
+
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData) == HAL_OK) {
+        
+        // Listen for the Voltage broadcasted from VMU_Rear_local
+        if (RxHeader.StdId == CAN_ID_VOLTAGE_REAR) {
+            
+            // Reconstruct the 16-bit voltage (Little-Endian per VMU_Rear packing)
+            uint16_t rear_voltage = RxData[0] | (RxData[1] << 8);
+            
+            // Update the state machine flag
+            if (rear_voltage < LOW_VOLTAGE_THRESHOLD) {
+                ecu_state.low_voltage = true;
+            } else {
+                ecu_state.low_voltage = false;
+            }
+        }
+    }
 }
