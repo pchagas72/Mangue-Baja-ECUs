@@ -1,19 +1,25 @@
-#include "state_machine.h"
+/* STM32CubeIDE HAL includes */
+#include "adc.h"  
+#include "can.h"  
+#include "i2c.h"  
+
+/* Custom includes */
+#include "../Inc/state_machine.h"
+#include "../Inc/low_voltage_mode.h"
 #include "can_management.h"
-#include <math.h> // Resolve o erro da função log()
-#include "adc.h"  // Resolve hadc1
-#include "can.h"  // Resolve hcan
-#include "i2c.h"  // Resolve hi2c1
+#include "speed.h"
+#include "voltage.h"
+#include "motor_temperature.h"
+#include "cvt_temperature.h"
+#include "low_voltage_mode.h"
 
-/* Global variable that comes from main.c via EXTI (Inductive Sensor) */
+/* C std libs includes */
+#include <stdint.h>
+#include <stdbool.h>
+
+#define DEBUG_DELAY    5000 // ms
 extern volatile uint32_t contador_pulsos_indutivo;
-
-/* Static timers for the state machine superloop */
 static uint32_t last_speed_tick = 0;
-static uint32_t last_adc_tick = 0;
-static uint32_t last_mlx_tick = 0;
-static uint32_t last_debug_tick = -10000; // Força envio imediato no primeiro loop
-static uint32_t last_led_tick = 0;
 
 void StateMachine_Init(tcu_state_t *tcu_current_state) {
     tcu_current_state->current_state = STATE_BOOT;
@@ -21,6 +27,7 @@ void StateMachine_Init(tcu_state_t *tcu_current_state) {
     tcu_current_state->CAN_ok = false;
     tcu_current_state->MLX_initialized = false;
     tcu_current_state->MLX_ok = false;
+    tcu_current_state->low_voltage = false;
     tcu_current_state->boot_tries = 0;
 }
 
@@ -31,10 +38,9 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
     switch (tcu_current_state->current_state) {
 
         case STATE_BOOT:
-
             /* Init MLX90614 Sensor */
             if (!tcu_current_state->MLX_initialized) {
-                if (HAL_I2C_IsDeviceReady(&hi2c1, MLX90614_I2C_ADDR, 3, 10) == HAL_OK) {
+                if (HAL_I2C_IsDeviceReady(&hi2c1, (0x5A << 1), 3, 10) == HAL_OK) {
                     tcu_current_state->MLX_initialized = true;
                 }
             }
@@ -61,15 +67,11 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
 
             /* Tries to initialize everything 50 times */
             if (tcu_current_state->CAN_initialized && tcu_current_state->MLX_initialized) {
-                /* ALL OK */
                 tcu_current_state->current_state = STATE_SELF_CHECK;
             } else if (tcu_current_state->boot_tries > 50) {
-                /* If some inits aren't able, try to run on partial mode */
                 if (tcu_current_state->CAN_initialized) {
-                    /* No CAN temperature */
-                    tcu_current_state->current_state = STATE_SELF_CHECK; // Avanca mesmo sem o MLX
+                    tcu_current_state->current_state = STATE_SELF_CHECK; 
                 } else {
-                    /* Without CAN, the ECU is useless. Go to error */
                     tcu_current_state->current_state = STATE_ERROR;
                 }
             }
@@ -77,12 +79,11 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
             tcu_current_state->boot_tries += 1;
             break;
 
-
         case STATE_SELF_CHECK:
             /* Tests I²C communication with MLX90614 */
             if (tcu_current_state->MLX_initialized) {
                 uint8_t mlx_test[3];
-                if (HAL_I2C_Mem_Read(&hi2c1, MLX90614_I2C_ADDR, MLX90614_REG_TOBJ1, I2C_MEMADD_SIZE_8BIT, mlx_test, 3, 10) == HAL_OK) {
+                if (HAL_I2C_Mem_Read(&hi2c1, (0x5A << 1), 0x07, I2C_MEMADD_SIZE_8BIT, mlx_test, 3, 10) == HAL_OK) {
                     tcu_current_state->MLX_ok = true;
                 } else {
                     tcu_current_state->MLX_ok = false;
@@ -91,7 +92,6 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                 tcu_current_state->MLX_ok = false;
             }
 
-            // Assume CAN ok para iniciar (Pode adicionar pacote de Ping futuramente)
             tcu_current_state->CAN_ok = true;
 
             if (tcu_current_state->CAN_ok) {
@@ -103,9 +103,15 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
 
         case STATE_RUNNING:
 
-            /* 100ms task */
-            /* Reads and sends speed */
-            if (current_tick - last_speed_tick >= SPEED_DELAY) {
+            /* Delega a lógica e a temporização para os respectivos módulos */
+            //Speed_Task(current_tick, tcu_current_state->low_voltage, contador_pulsos_indutivo, last_speed_tick);
+            Voltage_Task(current_tick, tcu_current_state->low_voltage, tcu_current_state);
+            MotorTemp_Task(current_tick, tcu_current_state->low_voltage);
+            CVTTemp_Task(current_tick, tcu_current_state->low_voltage, tcu_current_state);
+
+            uint32_t current_speed_delay = tcu_current_state->low_voltage ? SPEED_LB_DELAY : SPEED_DELAY;
+
+            if (current_tick - last_speed_tick >= current_speed_delay) {
                 uint32_t dt_ms = current_tick - last_speed_tick;
                 last_speed_tick = current_tick;
 
@@ -123,76 +129,20 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                 CAN_Send_Speed((uint16_t)speed_kmh);
             }
 
-            /* 100ms task */
-            /* Reads and sends ADC data (voltage + motor temperature) */
-            if (current_tick - last_adc_tick >= ADC_DELAY) {
-                last_adc_tick = current_tick;
-                ADC_ChannelConfTypeDef sConfig = {0};
-
-                /* Reads channel 4 */
-                /* Voltage */
-                sConfig.Channel = ADC_CHANNEL_4;
-                sConfig.Rank = ADC_REGULAR_RANK_1;
-                sConfig.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
-                HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-
-                HAL_ADC_Start(&hadc1);
-                if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-                    uint32_t adc_raw_value = HAL_ADC_GetValue(&hadc1);
-                    float voltage_at_pin = ((float)adc_raw_value / 4095.0f) * 3.3f;
-                    float actual_vcc_voltage = voltage_at_pin * 5.0f;
-
-                    CAN_Send_Voltage((uint16_t)(actual_vcc_voltage * 100.0f));
+            /* Heartbeat LED blink: Zero blinks se low_voltage for true */
+            if (!tcu_current_state->low_voltage) {
+                static uint32_t last_led_tick = 0;
+                if (current_tick - last_led_tick >= 100){
+                    last_led_tick = current_tick;
+                    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
                 }
-                HAL_ADC_Stop(&hadc1);
-
-                /* Reads channel 0 */
-                /* NTC (motor temperature) */
-                sConfig.Channel = ADC_CHANNEL_0;
-                HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-
-                HAL_ADC_Start(&hadc1);
-                if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-                    uint32_t adc_raw_ntc = HAL_ADC_GetValue(&hadc1);
-                    if (adc_raw_ntc > 0 && adc_raw_ntc < 4095) {
-                        float ntc_resistance = R_FIXO * ((float)adc_raw_ntc / (4095.0f - (float)adc_raw_ntc));
-                        float temperature_kelvin = 1.0f / ((1.0f / NTC_T0) + (1.0f / NTC_BETA) * log(ntc_resistance / NTC_R0));
-                        float temperature_celsius = temperature_kelvin - 273.15f;
-
-                        CAN_Send_Temp_NTC((int16_t)(temperature_celsius * 100.0f));
-                    }
-                }
-                HAL_ADC_Stop(&hadc1);
+            } else {
+                /* Força o LED a ficar apagado (PC13 é active-low na maioria das Bluepills) */
+                HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
             }
 
-            /* 100ms task */
-            /* Reads and sends MLX90614 data (CVT temperature) */
-            if (current_tick - last_mlx_tick >= MLX_DELAY) { // Removida a trava MLX_ok daqui!
-                last_mlx_tick = current_tick;
-                uint8_t mlx_data[3];
-
-                if (HAL_I2C_Mem_Read(&hi2c1, MLX90614_I2C_ADDR, MLX90614_REG_TOBJ1, I2C_MEMADD_SIZE_8BIT, mlx_data, 3, 50) == HAL_OK) {
-                    tcu_current_state->MLX_ok = true; // Se leu certo, garante que a flag está true
-
-                    uint16_t temp_raw = (mlx_data[1] << 8) | mlx_data[0];
-                    float temp_kelvin = temp_raw * 0.02f;
-                    float mlx_temperature_celsius = temp_kelvin - 273.15f;
-
-                    CAN_Send_Temp_CVT((int16_t)(mlx_temperature_celsius * 100.0f));
-                } else {
-                    tcu_current_state->MLX_ok = false; // Avisa o pacote de debug que houve falha, mas tentará de novo no próximo loop
-                }
-            }
-
-            /* 100ms task */
-            /* Heartbeat LED blink */
-            if (current_tick - last_led_tick >= 100){
-                last_led_tick = current_tick;
-                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-            }
-
-            /* 5000ms Task */
             /* Debug CAN package */
+            static uint32_t last_debug_tick = 0;
             if (current_tick - last_debug_tick >= DEBUG_DELAY) {
                 last_debug_tick = current_tick;
                 can_debug_packet_t debug_packet;

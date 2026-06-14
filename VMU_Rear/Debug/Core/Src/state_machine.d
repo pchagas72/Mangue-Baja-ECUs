@@ -1,6 +1,5 @@
-Core/Src/state_machine.o: ../Core/Src/state_machine.c \
- ../Core/Inc/state_machine.h ../Core/Inc/main.h \
- ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
+Core/Src/state_machine.o: ../Core/Src/state_machine.c ../Core/Inc/adc.h \
+ ../Core/Inc/main.h ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
  ../Core/Inc/stm32f1xx_hal_conf.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h \
@@ -26,9 +25,14 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h \
- ../Core/Inc/can_management.h ../Core/Inc/adc.h ../Core/Inc/can.h \
- ../Core/Inc/i2c.h
-../Core/Inc/state_machine.h:
+ ../Core/Inc/can.h ../Core/Inc/i2c.h ../Core/Src/../Inc/state_machine.h \
+ ../Core/Src/../Inc/main.h ../Core/Src/../Inc/low_voltage_mode.h \
+ ../Core/Inc/can_management.h ../Core/Inc/speed.h \
+ ../Core/Inc/low_voltage_mode.h ../Core/Inc/can_management.h \
+ ../Core/Inc/voltage.h ../Core/Inc/adc.h ../Core/Inc/state_machine.h \
+ ../Core/Inc/motor_temperature.h ../Core/Inc/cvt_temperature.h \
+ ../Core/Inc/i2c.h ../Core/Inc/low_voltage_mode.h
+../Core/Inc/adc.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -56,7 +60,19 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h:
-../Core/Inc/can_management.h:
-../Core/Inc/adc.h:
 ../Core/Inc/can.h:
 ../Core/Inc/i2c.h:
+../Core/Src/../Inc/state_machine.h:
+../Core/Src/../Inc/main.h:
+../Core/Src/../Inc/low_voltage_mode.h:
+../Core/Inc/can_management.h:
+../Core/Inc/speed.h:
+../Core/Inc/low_voltage_mode.h:
+../Core/Inc/can_management.h:
+../Core/Inc/voltage.h:
+../Core/Inc/adc.h:
+../Core/Inc/state_machine.h:
+../Core/Inc/motor_temperature.h:
+../Core/Inc/cvt_temperature.h:
+../Core/Inc/i2c.h:
+../Core/Inc/low_voltage_mode.h:

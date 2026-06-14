@@ -1,11 +1,15 @@
-#include "main.h"
+/* Includes from stm32cubeIDE HAL */
+#include "../Inc/main.h"
 #include "adc.h"
 #include "can.h"
 #include "i2c.h"
 #include "gpio.h"
 
-/* Include state machine */
-#include "state_machine.h"
+/* C libaries includes */
+#include <stdint.h>
+
+/* Custom includes */
+#include "../Inc/state_machine.h"
 
 /* Essential global variables */
 volatile uint32_t contador_pulsos_indutivo = 0;

@@ -1,0 +1,10 @@
+#ifndef LOW_VOLTAGE_MODE
+#define LOW_VOLTAGE_MODE
+
+#define SPEED_LB_DELAY 1000 * 15
+#define CVT_TEMP_LB_DELAY 1000 * 15
+#define ADC_LB_DELAY 1000 * 10
+#define NTC_LB_DELAY 1000 * 15
+#define MOTOR_TEMP_LB_DELAY 1000 * 15
+
+#endif

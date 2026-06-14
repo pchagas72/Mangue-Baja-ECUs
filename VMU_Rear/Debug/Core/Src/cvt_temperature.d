@@ -1,4 +1,5 @@
-Core/Src/main.o: ../Core/Src/main.c ../Core/Src/../Inc/main.h \
+Core/Src/cvt_temperature.o: ../Core/Src/cvt_temperature.c \
+ ../Core/Src/../Inc/cvt_temperature.h ../Core/Src/../Inc/main.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
  ../Core/Inc/stm32f1xx_hal_conf.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h \
@@ -25,9 +26,10 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Src/../Inc/main.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h \
- ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/can.h ../Core/Inc/i2c.h \
- ../Core/Inc/gpio.h ../Core/Src/../Inc/state_machine.h \
- ../Core/Src/../Inc/main.h
+ ../Core/Src/../Inc/state_machine.h ../Core/Src/../Inc/i2c.h \
+ ../Core/Src/../Inc/can_management.h \
+ ../Core/Src/../Inc/low_voltage_mode.h
+../Core/Src/../Inc/cvt_temperature.h:
 ../Core/Src/../Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -55,10 +57,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Src/../Inc/main.h \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h:
-../Core/Inc/adc.h:
-../Core/Inc/main.h:
-../Core/Inc/can.h:
-../Core/Inc/i2c.h:
-../Core/Inc/gpio.h:
 ../Core/Src/../Inc/state_machine.h:
-../Core/Src/../Inc/main.h:
+../Core/Src/../Inc/i2c.h:
+../Core/Src/../Inc/can_management.h:
+../Core/Src/../Inc/low_voltage_mode.h:
