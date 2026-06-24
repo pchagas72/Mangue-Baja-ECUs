@@ -60,29 +60,31 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
 
             RPM_Init();
 
-            // --- Lógica de Transição Tolerante a Falhas ---
+            /* Tries to initialize everything 50 times */
+            /*
+             * TODO:
+             *      When I²C readings fail, tries to reboot their communication.
+             *      For that purpose, add different boot_tries values.
+             *      50 times when turning everything on, 10 times every 10 seconds on a new recovery task.
+            */
+
             if (vmu_current_state->CAN_initialized && vmu_current_state->IMU_initialized) {
-                // Cenário Ideal: Tudo ligou, vamos para a pista!
                 vmu_current_state->current_state = STATE_SELF_CHECK;
             }
             else if (vmu_current_state->boot_tries > 50) {
-                // Timeout: Se passarem ~500ms e a IMU não acordar, joga a ECU pra frente para não
-                // perder a telemetria do motor (RPM). Ficar preso aqui no Baja é inaceitável.
                 if (vmu_current_state->CAN_initialized) {
                     vmu_current_state->current_state = STATE_SELF_CHECK;
                 } else {
-                    vmu_current_state->current_state = STATE_ERROR; // Sem CAN a ECU é inútil
+                    vmu_current_state->current_state = STATE_ERROR;
                 }
             }
-
-            // Dá um tempo vital de 10ms para os hardwares externos (IMU) "respirarem"
             HAL_Delay(10);
             vmu_current_state->boot_tries += 1;
 
             break;
 
         case STATE_SELF_CHECK:
-            // Só tenta ler os dados se a IMU tiver conseguido sair do boot com vida
+            /* Tests I²C communication with LSM6DS3 */
             if (vmu_current_state->IMU_initialized && LSM6DS3_Read(&hi2c1, &lsm6ds3_raw_data)){
                 vmu_current_state->IMU_ok = true;
             } else {
@@ -98,7 +100,6 @@ void StateMachine_Update(vmu_state_t *vmu_current_state){
             }
 
             break;
-
 
         case STATE_RUNNING:
             uint32_t current_rpm_delay = vmu_current_state->low_voltage ? RPM_LB_DELAY : RPM_DELAY;

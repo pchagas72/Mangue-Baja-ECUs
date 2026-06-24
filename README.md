@@ -1,31 +1,32 @@
 # Mangue Baja - ECU Firmware (Temporada 2026)
 
-Este repositório contém o firmware embarcado para as Unidades de Controle Eletrônico (ECUs) do veículo off-road da equipe Mangue Baja. O sistema é construído sobre as arquiteturas **ESP32** e **STM32**, atualmente passando por um processo de refatoração do framework Arduino para **ESP-IDF nativo** e **STM32CubeIDE**. O objetivo é garantir um comportamento mais determinístico, desempenho em tempo real e confiabilidade de nível automotivo nas trilhas e provas.
+Este repositório contém o firmware embarcado para as Unidades de Controle Eletrônico (ECUs) do veículo off-road da equipe Mangue Baja.
 
 ## Arquitetura do Sistema
 
 A eletrônica do veículo é distribuída por múltiplos módulos principais interconectados via **Barramento CAN (CAN Bus)**:
 
-### Módulos ESP32 (Framework ESP-IDF)
+### ECUs de comunicação
 
 #### 1. MPU (Mapping and Positioning Unit)
-Responsável pela localização do veículo e telemetria de longo alcance.
+Responsável pela localização do veículo e telemetria via rádio.
 * **Funções:** Aquisição de dados de GPS e comunicação LoRa.
-* **Status:** Refatoração para ESP-IDF (conclusão prevista antes de 15/07).
+* **Status:** A espera das PCBs serem montadas para programação do firmware final.
     * **CAN:** Migração para o driver nativo **TWAI (Two-Wire Automotive Interface)** para temporização precisa e tratamento de erros.
     * **LoRa:** Implementação de um driver UART customizado com **DMA (Direct Memory Access)** em substituição às chamadas bloqueantes, garantindo que o loop principal permaneça livre durante a transmissão.
 
 #### 2. SCU (Storage Control Unit)
-É o nó central de aquisição de dados, datalogger e telemetria em nuvem.
+É o node central de aquisição de dados, datalogger e telemetria em nuvem.
 * **Funções:** Gravação local de dados em Cartão SD e telemetria MQTT via rede GSM.
-* **Status:** Refatoração para ESP-IDF (conclusão prevista antes de 15/07).
+* **Status:** A espera das PCBs serem montadas para programação do firmware final.
     * **Armazenamento:** Implementação de **Virtual File System (VFS)** com barramento SPI para robustez de arquivos.
+    * **GSM:** Implementa um GSM A7670 e implementa telemetria via protocolo MQTT pela rede celular.
 
 #### 3. Steering Wheel (Volante)
 Responsável por apresentar informações críticas ao piloto em tempo real.
 * **Funções:** Painel de instrumentos integrando displays OLED (SSD1309) via I2C/SPI e leitura de inputs.
 
-### Módulos STM32 (STM32CubeIDE)
+### ECUs de aquisição
 
 #### 4. VMU Center (Vehicle Management Unit - Center)
 Unidade central focada no sensoriamento inercial do chassi.

@@ -1,9 +1,9 @@
 /* Includes from stm32cubeIDE HAL */
 #include "../Inc/main.h"
-#include "adc.h"
-#include "can.h"
-#include "i2c.h"
-#include "gpio.h"
+#include "../Inc/adc.h"
+#include "../Inc/can.h"
+#include "../Inc/i2c.h"
+#include "../Inc/gpio.h"
 
 /* C libaries includes */
 #include <stdint.h>

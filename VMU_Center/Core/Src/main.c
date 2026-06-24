@@ -12,19 +12,12 @@
 #include "can.h"
 #include "i2c.h"
 #include "gpio.h"
-#include "rpm.h"
-#include "../Inc/state_machine.h"
 
 /* User includes */
-#include "kalman.h"
-#include "lsm6ds3.h"
-#include <math.h> // Necessary for IMU calculations (atan2, sqrt)
+#include "../Inc/state_machine.h"
+#include "rpm.h"
 
 /* Private Variables */
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846f
-#endif
 
 // CAN Transmission variables
 CAN_TxHeaderTypeDef TxHeader;
@@ -98,7 +91,7 @@ void SystemClock_Config(void)
 // === 1. Callback da Interrupção (EXTI) ===
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin == GPIO_PIN_4) // Assumindo PB4 como no código anterior
+    if (GPIO_Pin == GPIO_PIN_4)
     {
         RPM_EXTI_Callback();
     }

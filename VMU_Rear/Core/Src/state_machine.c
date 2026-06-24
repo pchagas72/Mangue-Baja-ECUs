@@ -1,17 +1,17 @@
 /* STM32CubeIDE HAL includes */
-#include "adc.h"  
-#include "can.h"  
-#include "i2c.h"  
+#include "../Inc/adc.h"  
+#include "../Inc/can.h"  
+#include "../Inc/i2c.h"  
 
 /* Custom includes */
 #include "../Inc/state_machine.h"
 #include "../Inc/low_voltage_mode.h"
-#include "can_management.h"
-#include "speed.h"
-#include "voltage.h"
-#include "motor_temperature.h"
-#include "cvt_temperature.h"
-#include "low_voltage_mode.h"
+#include "../Inc/can_management.h"
+#include "../Inc/speed.h"
+#include "../Inc/voltage.h"
+#include "../Inc/motor_temperature.h"
+#include "../Inc/cvt_temperature.h"
+#include "../Inc/low_voltage_mode.h"
 
 /* C std libs includes */
 #include <stdint.h>
@@ -66,6 +66,13 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
             }
 
             /* Tries to initialize everything 50 times */
+            /*
+             * TODO:
+             *      When I²C readings fail, tries to reboot their communication.
+             *      For that purpose, add different boot_tries values.
+             *      50 times when turning everything on, 10 times every 10 seconds on a new recovery task.
+            */
+
             if (tcu_current_state->CAN_initialized && tcu_current_state->MLX_initialized) {
                 tcu_current_state->current_state = STATE_SELF_CHECK;
             } else if (tcu_current_state->boot_tries > 50) {
@@ -103,14 +110,14 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
 
         case STATE_RUNNING:
 
-            /* Delega a lógica e a temporização para os respectivos módulos */
-            //Speed_Task(current_tick, tcu_current_state->low_voltage, contador_pulsos_indutivo, last_speed_tick);
             Voltage_Task(current_tick, tcu_current_state->low_voltage, tcu_current_state);
             MotorTemp_Task(current_tick, tcu_current_state->low_voltage);
             CVTTemp_Task(current_tick, tcu_current_state->low_voltage, tcu_current_state);
 
             uint32_t current_speed_delay = tcu_current_state->low_voltage ? SPEED_LB_DELAY : SPEED_DELAY;
 
+            /* Speed is here to keep variable context as tight as possible */
+            /* Check VMU_Center for alternate an method of capturing EXT callback data */
             if (current_tick - last_speed_tick >= current_speed_delay) {
                 uint32_t dt_ms = current_tick - last_speed_tick;
                 last_speed_tick = current_tick;
@@ -137,7 +144,6 @@ void StateMachine_Update(tcu_state_t *tcu_current_state) {
                     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
                 }
             } else {
-                /* Força o LED a ficar apagado (PC13 é active-low na maioria das Bluepills) */
                 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
             }
 
